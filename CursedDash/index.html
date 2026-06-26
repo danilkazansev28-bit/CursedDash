@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Geometry Dash Sandbox Pro Fixed</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="objectsLayer"></div>
+
+        <div id="progressBarContainer">
+            <div id="progressText">0%</div>
+            <div id="progressBarFill"></div>
+        </div>
+        <div id="scoreBoard">Очки: <span id="scoreVal">0</span></div>
+        
+        <button id="stopTestBtn">В редактор</button>
+        <div id="cube"></div>
+        <div id="floor"></div>
+        
+        <!-- Панель инструментов редактора -->
+        <div id="editorPanel">
+             <button id="btnScrollLeft" style="background:#555; padding: 4px 8px; font-size:10px;">◀ Влево</button>
+<button id="btnScrollRight" style="background:#555; padding: 4px 8px; font-size:10px;">▶ Вправо</button>
+<div style="width: 2px; height: 20px; background: #555; margin: 0 4px;"></div>
+
+            <button id="toolSpikeFloor" class="tool-btn active">▲ Шип П</button>
+            <button id="toolSpikeCeil" class="tool-btn">▼ Шип Пот</button>
+            <button id="toolBlock" class="tool-btn">■ Блок</button>
+            <button id="toolPortal" class="tool-btn">🌀 Портал</button>
+            <div style="width: 1px; height: 15px; background: #444; margin: 0 2px;"></div>
+            <button id="toolOrbPurple" class="tool-btn">🟣 Орб Ф</button>
+            <button id="toolOrbPink" class="tool-btn">🌸 Орб Р</button>
+            <button id="toolOrbRed" class="tool-btn">🔴 Орб К</button>
+            <div style="width: 1px; height: 15px; background: #444; margin: 0 2px;"></div>
+            <button id="toolPadYellow" class="tool-btn">🟨 Бат Ж</button>
+            <button id="toolPadPink" class="tool-btn">🟩 Бат Р</button>
+            <button id="toolPadRed" class="tool-btn">🟥 Бат К</button>
+            <div style="width: 1px; height: 15px; background: #444; margin: 0 2px;"></div>
+            <select id="customTrackSelect" class="track-select">
+                <option value="1">🎵 Трек 1</option>
+                <option value="2">🎵 Трек 2</option>
+                <option value="3">🎵 Трек 3</option>
+            </select>
+            <button id="toolSlow" class="tool-btn">x0.5</button>
+            <button id="toolNorm" class="tool-btn">x1.0</button>
+            <button id="toolFast" class="tool-btn">x1.5</button>
+            <button id="toolEraser" class="tool-btn" style="background:#444">🧽 Стереть</button>
+            <div style="width: 2px; height: 20px; background: #555; margin: 0 4px;"></div>
+            <button id="btnStartTest" style="background:#00ff88; color:#111; padding: 4px 8px; font-size:10px;">▶ Тест</button>
+            <button id="btnSaveLevel" style="background:#00bfff; color:#111; padding: 4px 8px; font-size:10px;">💾 Сохр</button>
+            <button id="btnClearLevel" style="background:#555; padding: 4px 8px; font-size:10px;">Очистить</button>
+            <button id="btnEditorExit" style="background:#e94560; padding: 4px 8px; font-size:10px;">Выход</button>
+        </div>
+
+        <!-- Главное Меню -->
+        <div id="mainMenuScreen" class="screen">
+            <h1>Geometry Dash Sandbox</h1>
+            <div class="btn-group">
+                <button id="btnPlayLvl1">Уровень 1</button>
+                <button id="btnPlayLvl2">Уровень 2</button>
+                <button id="btnPlayLvl3">Уровень 3</button>
+            </div>
+            <div class="btn-group">
+                <button id="btnOpenEditor" style="background:#00ff88; color:#111">Редактор уровней</button>
+                <button id="btnOpenSkins" style="background:#0f3460">Облики куба</button>
+            </div>
+            <div style="font-size:13px; margin-top:8px; color:#7d79a6; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">Ваши сохраненные уровни:</div>
+            <div id="levelsListContainer"></div>
+        </div>
+
+        <!-- Выбор скинов -->
+        <div id="skinSelectScreen" class="screen">
+            <h1>Выберите Кубик</h1>
+            <div class="skin-options">
+                <div class="skin-card selected" style="background:#e94560;" onclick="window.Game.selectSkin(0, this)">■</div>
+                <div class="skin-card" style="background:#00bfff;" onclick="window.Game.selectSkin(1, this)">▲</div>
+                <div class="skin-card" style="background:#ffaa00;" onclick="window.Game.selectSkin(2, this)">⚡</div>
+            </div>
+            <button id="btnCloseSkins">Назад</button>
+        </div>
+
+        <!-- Экран поражения (Плашка смерти) -->
+        <div id="gameOverScreen" class="screen" style="display: none;">
+            <h1>ИГРА ОКОНЧЕНА</h1>
+            <p style="margin-bottom: 15px; font-size: 18px; color: #ff5773;">Ваш прогресс: <span id="finalScore">0</span></p>
+            <div class="btn-group">
+                <button id="restartBtn">Повторить</button>
+                <button id="btnGameOverExit" style="background:#0f3460">В меню</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js" type="module"></script>
+</body>
+</html>
