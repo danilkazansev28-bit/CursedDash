@@ -39,10 +39,25 @@ window.PhysicsEngine = {
         let invDenom = 1 / (dot00 * dot11 - dot01 * dot01), u = (dot11 * dot02 - dot01 * dot12) * invDenom, v = (dot00 * dot12 - dot01 * dot02) * invDenom;
         return (u >= 0) && (v >= 0) && (u + v <= 1);
     },
+    // ЮВЕЛИРНЫЙ ФИКС: Сужаем хитбокс шипа, делая отступы, чтобы игрок не умирал в воздухе!
     checkTriangleCollision(cL, cR, cB, cT, s) {
-        let ax = s.x, ay = s.bottom, bx = s.x + s.width, by = s.bottom, cx = s.x + s.width/2, cy = s.bottom + s.height;
-        if(s.type === 'spike-ceil') { ay = s.bottom + s.height; by = s.bottom + s.height; cy = s.bottom; }
-        let points = [{x:cL, y:cB}, {x:cR, y:cB}, {x:cL, y:cT}, {x:cR, y:cT}, {x:cL+20, y:cB+20}];
+        const paddingX = 6; // Срезаем по 6 пикселей с боков пустого квадрата
+        const paddingY = 4; // Немного опускаем верхушку шипа для честности
+        
+        let ax = s.x + paddingX; 
+        let ay = s.bottom; 
+        let bx = s.x + s.width - paddingX; 
+        let by = s.bottom; 
+        let cx = s.x + s.width / 2; 
+        let cy = s.bottom + s.height - paddingY;
+        
+        if(s.type === 'spike-ceil') { 
+            ay = s.bottom + s.height; 
+            by = s.bottom + s.height; 
+            cy = s.bottom + paddingY; 
+        }
+        
+        let points = [{x:cL+4, y:cB+4}, {x:cR-4, y:cB+4}, {x:cL+4, y:cT-4}, {x:cR-4, y:cT-4}, {x:cL+20, y:cB+20}];
         for(let p of points) { if(this.isPointInTriangle(p.x, p.y, ax, ay, bx, by, cx, cy)) return true; }
         return false;
     },
@@ -138,7 +153,6 @@ window.PhysicsEngine = {
             if (prt.x < -50) { prt.element.remove(); window.Game.portals.splice(i, 1); continue; }
             if (cR > prt.x && cL < prt.x + prt.width && cB < prt.bottom + prt.height && cT > prt.bottom) {
                 window.AudioEngine.playPortalSound(); prt.element.remove(); window.Game.portals.splice(i, 1);
-                // ЖЕСТКИЙ ФИКС КУБА И КОРАБЛЯ: Полностью удалили borderRadius, кораблик останется кубической формы!
                 if (window.Game.currentMode === 'cube') { window.Game.currentMode = 'ship'; } 
                 else { window.Game.currentMode = 'cube'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
 // js/physics.js - Часть 4 из 4
@@ -159,7 +173,10 @@ window.PhysicsEngine = {
             const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; 
             spike.element.style.backgroundImage = "url('/assets/images/spike.png')";
             if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } 
-            if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } } 
+            if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { 
+                // Вызываем обновленный ювелирный треугольный просчет столкновения
+                if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } 
+            } 
         }
         if (window.Game.animationFrameId) cancelAnimationFrame(window.Game.animationFrameId);
         window.Game.animationFrameId = requestAnimationFrame(() => this.update());
