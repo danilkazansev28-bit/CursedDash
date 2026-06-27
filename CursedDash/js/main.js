@@ -20,6 +20,7 @@ window.MenuEngine = {
             restartBtn: document.getElementById('restartBtn'), 
             mainMenuScreen: document.getElementById('mainMenuScreen'), 
             editorPanel: document.getElementById('editorPanel'), 
+            editorLeftPanel: document.getElementById('editorLeftPanel'), // Новая ссылка на левую панель
             skinSelectScreen: document.getElementById('skinSelectScreen'), 
             stopTestBtn: document.getElementById('stopTestBtn'), 
             levelsListContainer: document.getElementById('levelsListContainer'), 
@@ -29,11 +30,8 @@ window.MenuEngine = {
         };
     },
 
-    // ГЕНИАЛЬНАЯ ФУНКЦИЯ: Закрывает ВШЕСТИТУЮ все окна и открывает только ОДНО заданное!
     switchScreen(activeScreenKey) {
         this.initDOMRefs();
-        
-        // Массив всех наших интерфейсных окон в игре
         const allScreens = {
             mainMenu: window.Game.DOM.mainMenuScreen,
             editor: window.Game.DOM.editorPanel,
@@ -41,15 +39,19 @@ window.MenuEngine = {
             gameOver: window.Game.DOM.gameOverScreen
         };
 
-        // Пробегаемся циклом: если окно совпало — включаем (flex), если нет — выключаем (none)
         for (let key in allScreens) {
             if (allScreens[key]) {
                 if (key === activeScreenKey) {
-                    allScreens[key].style.display = (key === 'editor') ? 'flex' : 'flex';
+                    allScreens[key].style.display = 'flex';
                 } else {
                     allScreens[key].style.display = 'none';
                 }
             }
+        }
+        
+        // Синхронизируем левую панель редактора с нижней панелью инструментов
+        if (window.Game.DOM.editorLeftPanel) {
+            window.Game.DOM.editorLeftPanel.style.display = (activeScreenKey === 'editor') ? 'flex' : 'none';
         }
     },
 
@@ -60,7 +62,7 @@ window.MenuEngine = {
         window.AudioEngine.stopMusic(); 
         if (window.Game.isTestingCustom && window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'none'; 
         window.AudioEngine.playDeathSound(); 
-        if (window.EffectsEngine) window.EffectsEngine.createExplosion(100, 50 - window.Game.cubeY); 
+        if (window.EffectsEngine) window.EffectsEngine.createExplosion(150, 50 - window.Game.cubeY); // Сдвинули взрыв под новый спавн
         
         if (window.Game.isTestingCustom) { 
             if (window.Game.DOM.finalScore) window.Game.DOM.finalScore.textContent = Math.min(100, Math.floor((window.Game.score / window.Game.levelMaxLength) * 100)) + "%"; 
@@ -68,6 +70,7 @@ window.MenuEngine = {
             if (window.Game.DOM.finalScore) window.Game.DOM.finalScore.textContent = Math.floor(window.Game.score) + " очков"; 
         } 
     },
+
 // js/main.js - Часть 2 из 4
     renderSavedLevels() { 
         this.initDOMRefs(); 
