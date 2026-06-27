@@ -99,7 +99,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('btnStartTest').addEventListener('click', () => window.MenuEngine.startCustomTest());
     document.getElementById('btnSaveLevel').addEventListener('click', () => window.EditorEngine.saveCustomLevelPrompt());
     document.getElementById('btnClearLevel').addEventListener('click', () => window.EditorEngine.clearCustomLevel());
-    document.getElementById('btnEditExit').addEventListener('click', () => window.MenuEngine.backToMenu());
+    
+    // ИСПРАВЛЕНИЕ ОПЕЧАТКИ: Изменили btnEditExit на правильный btnEditorExit под ваш HTML!
+    const exitBtn = document.getElementById('btnEditorExit');
+    if (exitBtn) {
+        exitBtn.addEventListener('click', () => window.MenuEngine.backToMenu());
+    }
+    
     window.Game.DOM.stopTestBtn.addEventListener('click', () => window.MenuEngine.backToMenu());
     document.getElementById('btnGameOverExit').addEventListener('click', () => window.MenuEngine.backToMenu());
     
