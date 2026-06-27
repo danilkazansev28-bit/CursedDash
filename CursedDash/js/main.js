@@ -90,39 +90,39 @@ window.MenuEngine = {
 // js/main.js - Часть 2 из 2
 document.addEventListener("DOMContentLoaded", () => {
     window.MenuEngine.initDOMRefs(); window.EditorEngine.initEditorEvents(); window.MenuEngine.renderSavedLevels();
-    document.getElementById('btnPlayLvl1').addEventListener('click', () => window.MenuEngine.startGame(1));
-    document.getElementById('btnPlayLvl2').addEventListener('click', () => window.MenuEngine.startGame(2));
-    document.getElementById('btnPlayLvl3').addEventListener('click', () => window.MenuEngine.startGame(3));
-    document.getElementById('btnOpenEditor').addEventListener('click', () => window.EditorEngine.openEditor());
-    document.getElementById('btnOpenSkins').addEventListener('click', () => window.Game.toggleSkins(true));
-    document.getElementById('btnCloseSkins').addEventListener('click', () => window.Game.toggleSkins(false));
-    document.getElementById('btnStartTest').addEventListener('click', () => window.MenuEngine.startCustomTest());
-    document.getElementById('btnSaveLevel').addEventListener('click', () => window.EditorEngine.saveCustomLevelPrompt());
-    document.getElementById('btnClearLevel').addEventListener('click', () => window.EditorEngine.clearCustomLevel());
     
-    // ИСПРАВЛЕНИЕ ОПЕЧАТКИ: Изменили btnEditExit на правильный btnEditorExit под ваш HTML!
-    const exitBtn = document.getElementById('btnEditorExit');
-    if (exitBtn) {
-        exitBtn.addEventListener('click', () => window.MenuEngine.backToMenu());
-    }
+    // БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ: Ошибки кнопок больше никогда не остановят игровой процесс!
+    const bindClick = (id, action) => { try { const el = document.getElementById(id); if (el) el.addEventListener('click', action); } catch(e){} };
     
-    window.Game.DOM.stopTestBtn.addEventListener('click', () => window.MenuEngine.backToMenu());
-    document.getElementById('btnGameOverExit').addEventListener('click', () => window.MenuEngine.backToMenu());
+    bindClick('btnPlayLvl1', () => window.MenuEngine.startGame(1));
+    bindClick('btnPlayLvl2', () => window.MenuEngine.startGame(2));
+    bindClick('btnPlayLvl3', () => window.MenuEngine.startGame(3));
+    bindClick('btnOpenEditor', () => window.EditorEngine.openEditor());
+    bindClick('btnOpenSkins', () => window.Game.toggleSkins(true));
+    bindClick('btnCloseSkins', () => window.Game.toggleSkins(false));
+    bindClick('btnStartTest', () => window.MenuEngine.startCustomTest());
+    bindClick('btnSaveLevel', () => window.EditorEngine.saveCustomLevelPrompt());
+    bindClick('btnClearLevel', () => window.EditorEngine.clearCustomLevel());
+    bindClick('btnEditExit', () => window.MenuEngine.backToMenu());
+    bindClick('btnEditorExit', () => window.MenuEngine.backToMenu());
+    bindClick('btnGameOverExit', () => window.MenuEngine.backToMenu());
     
-    document.getElementById('toolSpikeFloor').addEventListener('click', () => window.EditorEngine.setTool('spike-floor'));
-    document.getElementById('toolSpikeCeil').addEventListener('click', () => window.EditorEngine.setTool('spike-ceil'));
-    document.getElementById('toolBlock').addEventListener('click', () => window.EditorEngine.setTool('solid-block'));
-    document.getElementById('toolPortal').addEventListener('click', () => window.EditorEngine.setTool('portal'));
-    document.getElementById('toolOrbPurple').addEventListener('click', () => window.EditorEngine.setTool('orb-purple'));
-    document.getElementById('toolOrbPink').addEventListener('click', () => window.EditorEngine.setTool('orb-pink'));
-    document.getElementById('toolOrbRed').addEventListener('click', () => window.EditorEngine.setTool('orb-red'));
-    document.getElementById('toolPadYellow').addEventListener('click', () => window.EditorEngine.setTool('pad-yellow'));
-    document.getElementById('toolPadPink').addEventListener('click', () => window.EditorEngine.setTool('pad-pink'));
-    document.getElementById('toolPadRed').addEventListener('click', () => window.EditorEngine.setTool('pad-red'));
-    document.getElementById('toolSlow').addEventListener('click', () => window.EditorEngine.setTool('speed-slow'));
-    document.getElementById('toolNorm').addEventListener('click', () => window.EditorEngine.setTool('speed-normal'));
-    document.getElementById('toolFast').addEventListener('click', () => window.EditorEngine.setTool('speed-fast'));
-    document.getElementById('toolEraser').addEventListener('click', () => window.EditorEngine.setTool('eraser'));
+    if (window.Game.DOM.stopTestBtn) { window.Game.DOM.stopTestBtn.addEventListener('click', () => window.MenuEngine.backToMenu()); }
+    
+    bindClick('toolSpikeFloor', () => window.EditorEngine.setTool('spike-floor'));
+    bindClick('toolSpikeCeil', () => window.EditorEngine.setTool('spike-ceil'));
+    bindClick('toolBlock', () => window.EditorEngine.setTool('solid-block'));
+    bindClick('toolPortal', () => window.EditorEngine.setTool('portal'));
+    bindClick('toolOrbPurple', () => window.EditorEngine.setTool('orb-purple'));
+    bindClick('toolOrbPink', () => window.EditorEngine.setTool('orb-pink'));
+    bindClick('toolOrbRed', () => window.EditorEngine.setTool('orb-red'));
+    bindClick('toolPadYellow', () => window.EditorEngine.setTool('pad-yellow'));
+    bindClick('toolPadPink', () => window.EditorEngine.setTool('pad-pink'));
+    bindClick('toolPadRed', () => window.EditorEngine.setTool('pad-red'));
+    bindClick('toolSlow', () => window.EditorEngine.setTool('speed-slow'));
+    bindClick('toolNorm', () => window.EditorEngine.setTool('speed-normal'));
+    bindClick('toolFast', () => window.EditorEngine.setTool('speed-fast'));
+    bindClick('toolEraser', () => window.EditorEngine.setTool('eraser'));
     
     window.Game.toggleSkins = function(show) { window.MenuEngine.initDOMRefs(); window.Game.DOM.mainMenuScreen.style.display = show ? 'none' : 'flex'; window.Game.DOM.skinSelectScreen.style.display = show ? 'flex' : 'none'; if (!show) { window.Game.gameActive = false; window.Game.isEditorMode = false; window.MenuEngine.renderSavedLevels(); } };
     window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); };
