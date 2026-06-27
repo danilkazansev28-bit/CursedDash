@@ -9,7 +9,6 @@ import './editor.js';
 
 window.MenuEngine = {
     initDOMRefs() {
-        // ЖЕСТКИЙ ФИКС ССЫЛОК: Перезаписываем ссылки каждый раз, чтобы браузер не терял слой объектов ObjectsLayer!
         window.Game.DOM = { 
             container: document.getElementById('gameContainer'), 
             objectsLayer: document.getElementById('objectsLayer'), 
@@ -133,7 +132,6 @@ window.MenuEngine = {
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
         if (window.AudioEngine) window.AudioEngine.initAudio(); 
         
-        // СИНХРОНИЗАЦИЯ: Перед запуском жестко обновляем ссылки, чтобы генератор testNormal видел холст!
         this.initDOMRefs();
         window.PhysicsEngine.resetGame(); 
     },
@@ -200,7 +198,12 @@ document.addEventListener("DOMContentLoaded", () => {
         for(let img of images) {
             await new Promise(r => {
                 const i = new Image(); i.src = `assets/images/${img}`;
-                i.onload = () => { updateBar(img); r(); }; i.onerror = () => { updateBar(img + ' (Заглушка)'); r(); }; 
+                i.onload = () => { updateBar(img); r(); }; 
+                // АВАРИЙНЫЙ ГЕЙМ-СПАСАТЕЛЬ: Если картинок нет (404), мы НЕ останавливаем игру, а мягко идем дальше!
+                i.onerror = () => { 
+                    updateBar(img + ' (Включен белый куб-прототип)'); 
+                    r(); 
+                }; 
             });
         }
         for(let track of tracks) {
@@ -218,10 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
     preloadEverything();
 
     const bindClick = (id, action) => { 
-        try { 
-            const el = document.getElementById(id); 
-            if (el) el.addEventListener('click', (e) => { e.stopPropagation(); action(); }); 
-        } catch(e){} 
+        try { const el = document.getElementById(id); if (el) el.addEventListener('click', (e) => { e.stopPropagation(); action(); }); } catch(e){} 
     };
     
     bindClick('btnPlayLvl1', () => window.MenuEngine.startGame(1));
@@ -240,7 +240,15 @@ document.addEventListener("DOMContentLoaded", () => {
     
     window.Game.toggleSkins = function(show) { window.MenuEngine.switchScreen(show ? 'skins' : 'mainMenu'); };
     window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); window.Game.applySkin(); };
-    window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; const s = window.Game.SKINS[window.Game.selectedSkinIndex]; window.Game.DOM.cube.style.background = s.bg; window.Game.DOM.cube.textContent = s.text; window.Game.DOM.cube.style.display = 'flex'; };
+    
+    // МАКСИМАЛЬНАЯ ОЧИСТКА КУБА: Текст со смайликом シ полностью стирается, возвращая белый квадрат!
+    window.Game.applySkin = function() { 
+        window.MenuEngine.initDOMRefs(); 
+        if (!window.Game.DOM.cube) return; 
+        window.Game.DOM.cube.style.backgroundColor = '#ffffff'; 
+        window.Game.DOM.cube.textContent = ''; // Стираем смайлик シ навсегда!
+        window.Game.DOM.cube.style.display = 'flex'; 
+    };
     
     window.addEventListener('keydown', (e) => { 
         if (e.code === 'Space') { 
@@ -259,7 +267,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.Game.DOM.container.addEventListener('mousedown', (e) => { 
         if (!window.Game.gameActive || window.Game.isEditorMode) return; 
         if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel') || e.target.closest('#mainMenuScreen') || e.target.closest('#gameOverScreen')) return;
-        
         window.AudioEngine.initAudio(); 
         window.PhysicsEngine.pressAction(); 
     });
