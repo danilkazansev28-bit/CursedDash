@@ -82,22 +82,47 @@ window.MenuEngine = {
         }); 
         window.MenuEngine.startCustomTest(); 
     },
-    loadAndEditLevel(idx) { const lvl = window.EditorEngine.getSavedLevels()[idx]; this.loadAndPlayLevel(idx); window.Game.isTestingCustom = false; window.EditorEngine.openEditor(); },
-    startGame(lvl) { this.initDOMRefs(); window.Game.currentLevel = lvl; window.Game.isTestingCustom = false; window.Game.isEditorMode = false; if (window.Game.DOM.mainMenuScreen) window.Game.DOM.mainMenuScreen.style.display = 'none'; if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; window.PhysicsEngine.resetGame(); },
-    startCustomTest() { this.initDOMRefs(); window.Game.isEditorMode = false; if (window.Game.DOM.editorPanel) window.Game.DOM.editorPanel.style.display = 'none'; window.Game.isTestingCustom = true; window.Game.currentLevel = 'custom'; if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'block'; if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; window.PhysicsEngine.resetGame(); },
-    backToMenu() { this.initDOMRefs(); if (window.Game.DOM.gameOverScreen) window.Game.DOM.gameOverScreen.style.display = 'none'; if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'none'; if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'none'; if (window.Game.DOM.editorPanel) window.Game.DOM.editorPanel.style.display = 'none'; if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'none'; window.PhysicsEngine.clearGameContainer(); if (window.Game.isTestingCustom) { window.Game.isTestingCustom = false; window.EditorEngine.openEditor(); } else { window.Game.isEditorMode = false; window.Game.customObjects.forEach(obj => obj.element.remove()); window.Game.customObjects = []; if (window.Game.DOM.mainMenuScreen) window.Game.DOM.mainMenuScreen.style.display = 'flex'; this.renderSavedLevels(); window.AudioEngine.stopMusic(); window.Game.gameActive = false; } }
+    loadAndEditLevel(idx) { const lvl = window.EditorEngine.getSavedLevels()[idx]; this.loadAndPlayLevel(idx); window.Game.isTestingCustom = false; window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; },
+    
+    // ИСПРАВЛЕНИЕ МУЗЫКИ: Инициализируем аудио-контекст браузера прямо в момент нажатия на кнопку уровня!
+    startGame(lvl) { 
+        this.initDOMRefs(); 
+        window.Game.currentLevel = lvl; 
+        window.Game.isTestingCustom = false; 
+        window.Game.isEditorMode = false; 
+        if (window.Game.DOM.mainMenuScreen) window.Game.DOM.mainMenuScreen.style.display = 'none'; 
+        if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
+        if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
+        if (window.AudioEngine) window.AudioEngine.initAudio(); 
+        window.PhysicsEngine.resetGame(); 
+    },
+    startCustomTest() { 
+        this.initDOMRefs(); 
+        window.Game.isEditorMode = false; 
+        if (window.Game.DOM.editorPanel) window.Game.DOM.editorPanel.style.display = 'none'; 
+        window.Game.isTestingCustom = true; 
+        window.Game.currentLevel = 'custom'; 
+        if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
+        if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'block'; 
+        if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
+        if (window.AudioEngine) window.AudioEngine.initAudio(); 
+        window.PhysicsEngine.resetGame(); 
+    },
+    backToMenu() { this.initDOMRefs(); if (window.Game.DOM.gameOverScreen) window.Game.DOM.gameOverScreen.style.display = 'none'; if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'none'; if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'none'; if (window.Game.DOM.editorPanel) window.Game.DOM.editorPanel.style.display = 'none'; if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'none'; window.PhysicsEngine.clearGameContainer(); if (window.Game.isTestingCustom) { window.Game.isTestingCustom = false; window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; } else { window.Game.isEditorMode = false; window.Game.customObjects.forEach(obj => obj.element.remove()); window.Game.customObjects = []; if (window.Game.DOM.mainMenuScreen) window.Game.DOM.mainMenuScreen.style.display = 'flex'; this.renderSavedLevels(); window.AudioEngine.stopMusic(); window.Game.gameActive = false; if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'flex'; } }
 };
 // js/main.js - Часть 2 из 2
 document.addEventListener("DOMContentLoaded", () => {
     window.MenuEngine.initDOMRefs(); window.EditorEngine.initEditorEvents(); window.MenuEngine.renderSavedLevels();
     
-    // БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ: Ошибки кнопок больше никогда не остановят игровой процесс!
     const bindClick = (id, action) => { try { const el = document.getElementById(id); if (el) el.addEventListener('click', action); } catch(e){} };
     
     bindClick('btnPlayLvl1', () => window.MenuEngine.startGame(1));
     bindClick('btnPlayLvl2', () => window.MenuEngine.startGame(2));
     bindClick('btnPlayLvl3', () => window.MenuEngine.startGame(3));
-    bindClick('btnOpenEditor', () => window.EditorEngine.openEditor());
+    
+    // ИСПРАВЛЕНИЕ РЕДАКТОРА: При клике на "Редактор уровней" принудительно прячем кубик
+    bindClick('btnOpenEditor', () => { window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; });
+    
     bindClick('btnOpenSkins', () => window.Game.toggleSkins(true));
     bindClick('btnCloseSkins', () => window.Game.toggleSkins(false));
     bindClick('btnStartTest', () => window.MenuEngine.startCustomTest());
