@@ -39,27 +39,27 @@ window.PhysicsEngine = {
         let invDenom = 1 / (dot00 * dot11 - dot01 * dot01), u = (dot11 * dot02 - dot01 * dot12) * invDenom, v = (dot00 * dot12 - dot01 * dot02) * invDenom;
         return (u >= 0) && (v >= 0) && (u + v <= 1);
     },
-    // ЮВЕЛИРНЫЙ ФИКС: Сужаем хитбокс шипа, делая отступы, чтобы игрок не умирал в воздухе!
     checkTriangleCollision(cL, cR, cB, cT, s) {
-        const paddingX = 6; // Срезаем по 6 пикселей с боков пустого квадрата
-        const paddingY = 4; // Немного опускаем верхушку шипа для честности
+        // Базовые хитбоксы без урезания
+        let ax = s.x; let ay = s.bottom; 
+        let bx = s.x + s.width; let by = s.bottom; 
+        let cx = s.x + s.width / 2; let cy = s.bottom + s.height;
         
-        let ax = s.x + paddingX; 
-        let ay = s.bottom; 
-        let bx = s.x + s.width - paddingX; 
-        let by = s.bottom; 
-        let cx = s.x + s.width / 2; 
-        let cy = s.bottom + s.height - paddingY;
+        if(s.type === 'spike-ceil') { ay = s.bottom + s.height; by = s.bottom + s.height; cy = s.bottom; }
         
-        if(s.type === 'spike-ceil') { 
-            ay = s.bottom + s.height; 
-            by = s.bottom + s.height; 
-            cy = s.bottom + paddingY; 
-        }
-        
-        let points = [{x:cL+4, y:cB+4}, {x:cR-4, y:cB+4}, {x:cL+4, y:cT-4}, {x:cR-4, y:cT-4}, {x:cL+20, y:cB+20}];
+        let points = [{x:cL, y:cB}, {x:cR, y:cB}, {x:cL, y:cT}, {x:cR, y:cT}, {x:cL+20, y:cB+20}];
         for(let p of points) { if(this.isPointInTriangle(p.x, p.y, ax, ay, bx, by, cx, cy)) return true; }
         return false;
+    },
+    // ФУНКЦИЯ ДЛЯ ОТРИСОВКИ ХИТБОКСОВ НА ЭКРАНЕ
+    drawHitboxDebug(el, type, width, height, customStyle = '') {
+        let debugDiv = el.querySelector('.debug-hitbox');
+        if (!debugDiv) {
+            debugDiv = document.createElement('div');
+            debugDiv.className = 'debug-hitbox';
+            el.appendChild(debugDiv);
+        }
+        debugDiv.style.cssText = `position:absolute; left:0; bottom:0; width:${width}px; height:${height}px; pointer-events:none; border:2px solid ${type === 'player' ? '#00ff88' : '#ff0055'}; background:${type === 'player' ? 'rgba(0,255,136,0.15)' : 'rgba(255,0,85,0.15)'}; z-index:9999; box-sizing:border-box; ${customStyle}`;
     },
 // js/physics.js - Часть 2 из 4
     update() {
@@ -100,11 +100,13 @@ window.PhysicsEngine = {
         if (liveCube) {
             liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`;
             liveCube.style.backgroundImage = `url("/assets/images/${window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png'}")`;
+            
+            // КРАСИМ ИГРОКА В ЗЕЛЕНУЮ ТЕСТОВУЮ РАМКУ ХИТБОКСА (40х40)
+            this.drawHitboxDebug(liveCube, 'player', 40, 40);
         }
         
         let activeBaseSpeed = window.Game.LEVEL_DATA[window.Game.currentLevel] ? window.Game.LEVEL_DATA[window.Game.currentLevel].speed : 5.5;
         let finalMovementSpeed = activeBaseSpeed * window.Game.currentSpeedMultiplier;
-
         window.Game.score += finalMovementSpeed;
         const liveScore = document.getElementById('scoreVal'); if (liveScore) liveScore.textContent = Math.floor(window.Game.score);
 
@@ -124,6 +126,10 @@ window.PhysicsEngine = {
         for (let i = window.Game.solidBlocks.length - 1; i >= 0; i--) {
             const b = window.Game.solidBlocks[i]; b.x -= finalMovementSpeed; b.element.style.left = b.x + 'px';
             b.element.style.backgroundImage = "url('/assets/images/block.png')";
+            
+            // КРАСНЫЙ ХИТБОКС БЛОКА (40х40)
+            this.drawHitboxDebug(b.element, 'solid', 40, 40);
+
             if (b.x < -50) { b.element.remove(); window.Game.solidBlocks.splice(i, 1); continue; }
             if (cR > b.x && cL < b.x + b.width && cT > b.bottom && cB < b.bottom + b.height) {
                 const overlapY = cB - (b.bottom + b.height);
@@ -147,6 +153,7 @@ window.PhysicsEngine = {
                 window.AudioEngine.playPortalSound(); window.Game.padCooldown = 15; 
             }
         }
+// js/physics.js - Часть 4 из 4
         for (let i = window.Game.portals.length - 1; i >= 0; i--) {
             const prt = window.Game.portals[i]; prt.x -= finalMovementSpeed; prt.element.style.left = prt.x + 'px';
             prt.element.style.backgroundImage = "url('/assets/images/portal.png')";
@@ -155,7 +162,7 @@ window.PhysicsEngine = {
                 window.AudioEngine.playPortalSound(); prt.element.remove(); window.Game.portals.splice(i, 1);
                 if (window.Game.currentMode === 'cube') { window.Game.currentMode = 'ship'; } 
                 else { window.Game.currentMode = 'cube'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
-// js/physics.js - Часть 4 из 4
+        
         for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
             const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
             sp.element.style.backgroundImage = "url('/assets/images/speed.png')";
@@ -172,9 +179,13 @@ window.PhysicsEngine = {
         for (let i = window.Game.spikes.length - 1; i >= 0; i--) { 
             const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; 
             spike.element.style.backgroundImage = "url('/assets/images/spike.png')";
+            
+            // ВИЗУАЛЬНЫЙ ХИТБОКС ШИПА: Рисуем точный треугольник опасности!
+            let clipStyle = spike.type === 'spike-ceil' ? 'clip-path:polygon(0% 0%, 100% 0%, 50% 100%)' : 'clip-path:polygon(50% 0%, 0% 100%, 100% 100%)';
+            this.drawHitboxDebug(spike.element, 'spike', 40, 40, clipStyle);
+
             if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } 
             if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { 
-                // Вызываем обновленный ювелирный треугольный просчет столкновения
                 if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } 
             } 
         }
