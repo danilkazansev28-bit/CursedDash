@@ -11,22 +11,24 @@ if (!window.EditorEngine) {
             window.Game.isMouseOverPanel = false; 
             window.PhysicsEngine.clearGameContainer(); 
             
-            // Динамически добавляем красивое текстовое поле для ввода MP3 ссылки в панель редактора, если его еще нет
             if (!document.getElementById('customMp3UrlInput')) {
                 const inputEl = document.createElement('input');
                 inputEl.id = 'customMp3UrlInput';
                 inputEl.type = 'text';
                 inputEl.placeholder = 'Вставь MP3-ссылку...';
-                inputEl.style.cssText = 'background:#222; color:#fff; border:1px solid #555; padding:4px; font-size:10px; width:130px; margin:0 4px; border-radius:3px;';
+                inputEl.style.cssText = 'background:#222; color:#fff; border:1px solid #555; padding:4px; font-size:10px; width:130px; margin:0 4px; border-radius:3px; position:relative; z-index:10000;';
                 
-                // Вставляем перед кнопкой "Тест"
+                // ЖЕСТКИЙ ФИКС: Запрещаем редактору перехватывать клики, когда мы пишем в инпуте!
+                inputEl.addEventListener('mousedown', (e) => { e.stopPropagation(); });
+                inputEl.addEventListener('keydown', (e) => { e.stopPropagation(); });
+                inputEl.addEventListener('keyup', (e) => { e.stopPropagation(); });
+                
                 const testBtn = document.getElementById('btnStartTest');
                 if (testBtn && testBtn.parentNode) {
                     testBtn.parentNode.insertBefore(inputEl, testBtn);
                 }
             }
             
-            // Если у текущего уровня уже есть ссылка, заполняем её в поле
             const inputField = document.getElementById('customMp3UrlInput');
             if (inputField) {
                 inputField.value = window.Game.currentCustomMp3Url || '';
@@ -54,11 +56,10 @@ if (!window.EditorEngine) {
             if(toolsMap[tool]) document.getElementById(toolsMap[tool]).classList.add('active');
         },
         saveCustomLevelPrompt() { 
-            if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой уровень!"); return; } 
+            if (window.Game.customObjects.length === 0) { alert("Нельзя保存 пустой уровень!"); return; } 
             const name = prompt("Введите название уровня:", "Мой уровень " + (this.getSavedLevels().length + 1)); 
             if (!name) return; 
             
-            // Запоминаем то, что пользователь ввёл в текстовое поле
             const inputField = document.getElementById('customMp3UrlInput');
             const mp3Url = inputField ? inputField.value.trim() : '';
             window.Game.currentCustomMp3Url = mp3Url;
@@ -66,7 +67,6 @@ if (!window.EditorEngine) {
             const levels = this.getSavedLevels();
             const dataToSave = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height })); 
             
-            // Сохраняем ссылку на MP3 в общую память браузера рядом с объектами!
             levels.push({ name: name, objects: dataToSave, track: window.Game.selectedTrack, customMp3Url: mp3Url }); 
             localStorage.setItem('gd_custom_levels', JSON.stringify(levels)); 
             window.MenuEngine.renderSavedLevels(); 
@@ -83,8 +83,11 @@ if (!window.EditorEngine) {
             if(scrRight) scrRight.addEventListener('click', () => { window.Game.editorScrollX += 120; this.updateEditorView(); });
             
             window.Game.DOM.container.addEventListener('mousedown', (e) => {
+                // ПОЛНАЯ РАЗБЛОКИРОВКА: Если кликнули по строке ввода ссылки, мгновенно выходим и не мешаем вводу текста!
+                if (e.target && e.target.id === 'customMp3UrlInput') return;
+                
                 e.preventDefault(); 
-                if (!window.Game.isEditorMode || window.Game.isMouseOverPanel || e.target === window.Game.DOM.stopTestBtn || e.target === window.Game.DOM.customTrackSelect || e.target.id === 'customMp3UrlInput' || e.target.closest('#editorPanel')) return;
+                if (!window.Game.isEditorMode || window.Game.isMouseOverPanel || e.target === window.Game.DOM.stopTestBtn || e.target === window.Game.DOM.customTrackSelect || e.target.closest('#editorPanel')) return;
                 
                 const rect = window.Game.DOM.container.getBoundingClientRect(); 
                 let clickX = e.clientX - rect.left, clickY = e.clientY - rect.top, globalX = clickX + window.Game.editorScrollX;
