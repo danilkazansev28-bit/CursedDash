@@ -9,6 +9,7 @@ body {
     position: relative; width: 800px; height: 400px;
     background: #0a0813; overflow: hidden; border: 4px solid #3d3b54;
     border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    z-index: 10;
 }
 #gameContainer::after {
     content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 50px;
@@ -19,27 +20,37 @@ body {
     display: flex; flex-direction: column; justify-content: center;
     align-items: center; background: #0a0813; z-index: 100;
 }
-/* СТИЛИ ДЛЯ НОВОЙ ЛЕВОЙ ВЕРТИКАЛЬНОЙ ПАНЕЛИ */
+
+/* ФИКС ЛЕВОЙ ПАНЕЛИ: Поднимаем приоритет z-index, чтобы мышь свободно нажимала кнопки */
 #editorLeftPanel {
     position: absolute; left: 0; top: 0; width: 110px; height: calc(100% - 90px);
     background: #111019; border-right: 3px solid #2d2b3d; display: none;
     flex-direction: column; align-items: center; justify-content: flex-start;
-    z-index: 200; padding: 10px 4px; box-sizing: border-box; gap: 8px;
+    z-index: 500 !important; padding: 10px 4px; box-sizing: border-box; gap: 8px;
 }
 .side-btn {
     width: 95px; height: 32px; border: 1px solid #444; color: #fff;
     font-size: 10px; font-weight: bold; cursor: pointer; border-radius: 4px;
     display: inline-flex; align-items: center; justify-content: center;
+    z-index: 510 !important;
 }
 .side-divider { width: 80%; height: 1px; background: #2d2b3d; margin: 4px 0; }
 
-/* НИЖНЯЯ ПАНЕЛЬ ИНСТРУМЕНТОВ РЕДАКТОРА С ОСТАВШЕЙСЯ СКРОЛЛ-ЗОНОЙ */
+/* ФИКС НИЖНЕЙ ПАНЕЛИ ОБЪЕКТОВ: Ставим высокий z-index, убирая невидимое перекрытие игрового поля! */
 #editorPanel {
     position: absolute; bottom: 0; left: 0; width: 100%; height: 90px;
     background: #111019; border-top: 3px solid #2d2b3d; display: none;
-    align-items: center; justify-content: flex-start; z-index: 200; padding: 6px 6px 6px 120px;
+    align-items: center; justify-content: flex-start; z-index: 500 !important; padding: 6px 6px 6px 120px;
     overflow-x: auto; box-sizing: border-box; gap: 6px;
 }
+.tool-btn { 
+    min-width: 55px; height: 35px; background: #252336; color: #fff; border: 1px solid #444; 
+    font-size: 9px; cursor: pointer; border-radius: 4px; display: inline-flex; 
+    align-items: center; justify-content: center; font-weight: bold;
+    z-index: 510 !important; /* Кнопки теперь нажимаются гарантированно! */
+}
+.tool-btn.active { background: #00ff88; color: #000; border-color: #fff; }
+
 .menu-title { font-size: 42px; color: #00ff88; font-weight: bold; text-shadow: 0 0 20px rgba(0,255,136,0.5); margin-bottom: 30px; }
 .menu-btn { background: linear-gradient(135deg, #00ff88, #00bfff); color: #0b0914; border: none; padding: 12px 35px; font-size: 16px; font-weight: bold; border-radius: 25px; cursor: pointer; margin: 8px; transition: 0.2s; box-shadow: 0 5px 15px rgba(0,255,136,0.3); display: block; z-index: 110; }
 .menu-btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(0,255,136,0.5); }
@@ -49,7 +60,7 @@ body {
 .spike, .solid-block, .portal, .speed-portal {
     position: absolute; display: block; z-index: 30; border-radius: 0px !important;
     background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important;
-    image-rendering: -moz-crisp-edges !important; image-rendering: -webkit-crisp-edges !important; image-rendering: pixelated !important; image-rendering: crisp-edges !important;
+    image-rendering: pixelated !important; image-rendering: crisp-edges !important;
 }
 .spike { width: 40px !important; height: 40px !important; background-color: #ffffff !important; }
 .solid-block { width: 40px !important; height: 40px !important; background-color: #ffffff !important; }
@@ -68,14 +79,19 @@ body {
 #progressBarContainer { position: absolute; top: 18px; left: 250px; width: 300px; height: 12px; background: rgba(25, 23, 38, 0.7); border: 2px solid #3d3b54; border-radius: 6px; display: none; z-index: 150; overflow: hidden; }
 #progressBarFill { width: 0%; height: 100%; background: #00ff88; transition: width 0.05s linear; }
 #progressText { position: absolute; top: -2px; width: 100%; text-align: center; color: #fff; font-size: 10px; font-weight: bold; font-family: sans-serif; }
-#loadingScreen { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: #090810; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999; }
+
+/* КРИТИЧЕСКИЙ ФИКС ЗАГРУЗОЧНОГО ЭКРАНА: Ставим z-index: 999999, выдвигая его на самый передний план над всеми слоями игры! */
+#loadingScreen { 
+    position: absolute; width: 100%; height: 100%; top: 0; left: 0; 
+    background: #090810; display: flex; flex-direction: column; 
+    justify-content: center; align-items: center; z-index: 999999 !important; 
+}
 .loader-title { color: #00ff88; font-family: 'Segoe UI', sans-serif; font-size: 24px; font-weight: bold; text-shadow: 0 0 15px rgba(0,255,136,0.4); margin-bottom: 20px; }
 .loader-bar { width: 300px; height: 12px; background: #1a1926; border: 2px solid #3d3b54; border-radius: 6px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
 #loaderFill { width: 0%; height: 100%; background: linear-gradient(90deg, #00ff88, #00bfff); box-shadow: 0 0 10px #00ff88; transition: width 0.1s ease; }
 #loaderText { color: #55547a; font-family: monospace; font-size: 11px; margin-top: 8px; }
+
 .particle { position: absolute; border-radius: 4px; pointer-events: none; z-index: 10; }
 .level-item { display: flex; justify-content: space-between; align-items: center; background: #1a1929; padding: 8px 12px; margin-bottom: 6px; border-radius: 4px; border-left: 3px solid #00ff88; width: 90%; }
 .level-item span { color: #fff; font-size: 12px; font-weight: bold; }
 .level-item-btns button { border: none; padding: 4px 8px; font-size: 10px; font-weight: bold; border-radius: 3px; cursor: pointer; margin-left: 4px; }
-.tool-btn { min-width: 55px; height: 35px; background: #252336; color: #fff; border: 1px solid #444; font-size: 9px; cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; }
-.tool-btn.active { background: #00ff88; color: #000; border-color: #fff; }
