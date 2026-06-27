@@ -9,7 +9,7 @@ import './editor.js';
 
 window.MenuEngine = {
     initDOMRefs() {
-        if (window.Game.DOM && window.Game.DOM.mainMenuScreen) return;
+        // ЖЕСТКИЙ ФИКС ССЫЛОК: Перезаписываем ссылки каждый раз, чтобы браузер не терял слой объектов ObjectsLayer!
         window.Game.DOM = { 
             container: document.getElementById('gameContainer'), 
             objectsLayer: document.getElementById('objectsLayer'), 
@@ -128,22 +128,27 @@ window.MenuEngine = {
         window.Game.currentLevel = lvl; 
         window.Game.isTestingCustom = false; 
         window.Game.isEditorMode = false; 
-        window.Game.isHoldingAction = false; // ЖЕСТКО ОБНУЛЯЕМ ЗАЖАТИЕ ПРИ СТАРТЕ ОФИЦИАЛЬНОГО УРОВНЯ
+        window.Game.isHoldingAction = false; 
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
         if (window.AudioEngine) window.AudioEngine.initAudio(); 
+        
+        // СИНХРОНИЗАЦИЯ: Перед запуском жестко обновляем ссылки, чтобы генератор testNormal видел холст!
+        this.initDOMRefs();
         window.PhysicsEngine.resetGame(); 
     },
     startCustomTest() { 
         this.switchScreen('none');
         window.Game.isEditorMode = false; 
         window.Game.isTestingCustom = true; 
-        window.Game.isHoldingAction = false; // ЖЕСТКО ОБНУЛЯЕМ ЗАЖАТИЕ ПРИ ЗАПУСКЕ ТЕСТА
+        window.Game.isHoldingAction = false; 
         window.Game.currentLevel = 'custom'; 
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'block'; 
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
         if (window.AudioEngine) window.AudioEngine.initAudio(); 
+        
+        this.initDOMRefs();
         window.PhysicsEngine.resetGame(); 
     },
     backToMenu() { 
@@ -212,7 +217,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     preloadEverything();
 
-    // СУПЕР-ФИКС КЛИКОВ МЕНЮ: Добавили e.stopPropagation(), чтобы клик по кнопке НЕ взрывал физику куба!
     const bindClick = (id, action) => { 
         try { 
             const el = document.getElementById(id); 
@@ -252,7 +256,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } 
     });
     
-    // НАДЁЖНЫЙ ФИЛЬТР ИГРОВОГО ПОЛЯ: Клик по кнопкам или панелям полностью игнорируется
     window.Game.DOM.container.addEventListener('mousedown', (e) => { 
         if (!window.Game.gameActive || window.Game.isEditorMode) return; 
         if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel') || e.target.closest('#mainMenuScreen') || e.target.closest('#gameOverScreen')) return;
