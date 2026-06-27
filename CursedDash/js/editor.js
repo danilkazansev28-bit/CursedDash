@@ -1,3 +1,36 @@
+// js/editor.js - Часть 1 из 2
+if (!window.EditorEngine) {
+    window.EditorEngine = {
+        openEditor() { 
+            window.MenuEngine.initDOMRefs(); 
+            window.Game.DOM.mainMenuScreen.style.display = 'none'; 
+            window.Game.DOM.editorPanel.style.display = 'flex'; 
+            window.Game.DOM.stopTestBtn.style.display = 'none'; 
+            window.Game.DOM.progressBarContainer.style.display = 'none'; 
+            window.Game.isEditorMode = true; 
+            window.Game.isMouseOverPanel = false; 
+            window.PhysicsEngine.clearGameContainer(); 
+            this.updateEditorView(); 
+        },
+        updateEditorView() { 
+            window.Game.customObjects.forEach(obj => { 
+                obj.element.style.left = (obj.x - window.Game.editorScrollX) + 'px'; 
+                obj.element.style.bottom = obj.bottom + 'px'; 
+                obj.element.style.display = 'block'; 
+                window.Game.DOM.objectsLayer.appendChild(obj.element); 
+            }); 
+        },
+        setTool(tool) {
+            window.Game.currentTool = tool; 
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            const toolsMap = { 
+                'spike-floor': 'toolSpikeFloor', 'spike-ceil': 'toolSpikeCeil', 'solid-block': 'toolBlock', 
+                'portal': 'toolPortal', 'orb-purple': 'toolOrbPurple', 'orb-pink': 'toolOrbPink', 'orb-red': 'toolOrbRed', 
+                'pad-yellow': 'toolPadYellow', 'pad-pink': 'toolPadPink', 'pad-red': 'toolPadRed', 
+                'speed-slow': 'toolSlow', 'speed-normal': 'toolNorm', 'speed-fast': 'toolFast', 'eraser': 'toolEraser' 
+            };
+            if(toolsMap[tool]) document.getElementById(toolsMap[tool]).classList.add('active');
+        },
 // js/editor.js - Часть 2 из 2
         initEditorEvents() {
             window.MenuEngine.initDOMRefs();
@@ -15,7 +48,6 @@
                 const rect = window.Game.DOM.container.getBoundingClientRect(); 
                 let clickX = e.clientX - rect.left, clickY = e.clientY - rect.top, globalX = clickX + window.Game.editorScrollX;
                 
-                // КРИТИЧЕСКИЙ ФИКС: Гарантируем, что координаты сохраняются как ЧИСЛА (Number)
                 let snapX = parseInt(Math.floor(globalX / 40) * 40, 10); 
                 let snapY = parseInt(Math.floor((400 - clickY) / 40) * 40, 10);
                 
