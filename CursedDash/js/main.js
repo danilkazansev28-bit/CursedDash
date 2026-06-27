@@ -59,8 +59,9 @@ window.MenuEngine = {
             item.className = 'level-item'; 
             item.innerHTML = `<span>${lvl.name}</span><div class="level-item-btns"><button style="background:#00ff88; color:#111;" id="playCustom-${idx}">Играть</button><button style="background:#0f3460" id="editCustom-${idx}">Ред.</button><button style="background:#e94560" id="delCustom-${idx}">Х</button></div>`; 
             window.Game.DOM.levelsListContainer.appendChild(item); 
+            
             document.getElementById(`playCustom-${idx}`).addEventListener('click', () => this.loadAndPlayLevel(idx)); 
-            document.getElementById(`editCustom-${idx}`).addEventListener('click', () => { window.MenuEngine.initDOMRefs(); window.Game.DOM.mainMenuScreen.style.display = 'none'; window.Game.DOM.editorPanel.style.display = 'flex'; window.Game.isEditorMode = true; window.Game.selectedTrackIndex = lvl.selectedTrackIndex !== undefined ? lvl.selectedTrackIndex : 0; window.Game.customObjects = lvl.objects.map(o => { const el = document.createElement('div'); if (o.type === 'solid-block') el.className = 'solid-block'; else if (o.type === 'portal') el.className = 'portal'; else if (o.type.startsWith('orb-')) el.className = `orb ${o.type}`; else if (o.type.startsWith('pad-')) el.className = `pad ${o.type}`; else if (o.type.startsWith('speed-')) el.className = `speed-portal ${o.type}`; else { el.className = 'spike'; if (o.type === 'spike-ceil') el.style.transform = 'rotate(180deg)'; } return { element: el, type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height }; }); window.EditorEngine.updateEditorView(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; }); 
+            document.getElementById(`editCustom-${idx}`).addEventListener('click', () => this.loadAndEditLevel(idx)); 
             document.getElementById(`delCustom-${idx}`).addEventListener('click', () => this.deleteLevel(idx)); 
         }); 
     },
@@ -81,6 +82,25 @@ window.MenuEngine = {
             return { element: el, type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height }; 
         }); 
         window.MenuEngine.startCustomTest(); 
+    },
+    loadAndEditLevel(idx) { 
+        this.initDOMRefs();
+        const lvl = window.EditorEngine.getSavedLevels()[idx]; 
+        window.Game.selectedTrackIndex = lvl.selectedTrackIndex !== undefined ? lvl.selectedTrackIndex : 0;
+        
+        window.Game.customObjects = lvl.objects.map(o => { 
+            const el = document.createElement('div'); 
+            if (o.type === 'solid-block') el.className = 'solid-block'; 
+            else if (o.type === 'portal') el.className = 'portal'; 
+            else if (o.type.startsWith('orb-')) el.className = `orb ${o.type}`; 
+            else if (o.type.startsWith('pad-')) el.className = `pad ${o.type}`; 
+            else if (o.type.startsWith('speed-')) el.className = `speed-portal ${o.type}`; 
+            else { el.className = 'spike'; if (o.type === 'spike-ceil') el.style.transform = 'rotate(180deg)'; } 
+            return { element: el, type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height }; 
+        });
+        window.Game.isTestingCustom = false; 
+        window.EditorEngine.openEditor(); 
+        if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; 
     },
 // js/main.js - Часть 3 из 4
     startGame(lvl) { 
@@ -106,12 +126,35 @@ window.MenuEngine = {
         if (window.AudioEngine) window.AudioEngine.initAudio(); 
         window.PhysicsEngine.resetGame(); 
     },
-    backToMenu() { this.initDOMRefs(); if (window.Game.DOM.gameOverScreen) window.Game.DOM.gameOverScreen.style.display = 'none'; if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'none'; if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'none'; if (window.Game.DOM.editorPanel) window.Game.DOM.editorPanel.style.display = 'none'; if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'none'; window.PhysicsEngine.clearGameContainer(); if (window.Game.isTestingCustom) { window.Game.isTestingCustom = false; window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; } else { window.Game.isEditorMode = false; window.Game.customObjects.forEach(obj => obj.element.remove()); window.Game.customObjects = []; if (window.Game.DOM.mainMenuScreen) window.Game.DOM.mainMenuScreen.style.display = 'flex'; this.renderSavedLevels(); window.AudioEngine.stopMusic(); window.Game.gameActive = false; if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'flex'; } }
+    backToMenu() { 
+        this.initDOMRefs(); 
+        if (window.Game.DOM.gameOverScreen) window.Game.DOM.gameOverScreen.style.display = 'none'; 
+        if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'none'; 
+        if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'none'; 
+        if (window.Game.DOM.editorPanel) window.Game.DOM.editorPanel.style.display = 'none'; 
+        if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'none'; 
+        window.PhysicsEngine.clearGameContainer(); 
+        
+        if (window.Game.isTestingCustom) { 
+            window.Game.isTestingCustom = false; 
+            window.EditorEngine.openEditor(); 
+            if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; 
+        } else { 
+            window.Game.isEditorMode = false; 
+            window.Game.customObjects.forEach(obj => { if(obj.element) obj.element.remove(); }); 
+            window.Game.customObjects = []; 
+            if (window.Game.DOM.mainMenuScreen) window.Game.DOM.mainMenuScreen.style.display = 'flex'; 
+            this.renderSavedLevels(); 
+            window.AudioEngine.stopMusic(); 
+            window.Game.gameActive = false; 
+            if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'flex'; 
+        } 
+    }
 };
 // js/main.js - Часть 4 из 4
 document.addEventListener("DOMContentLoaded", () => {
     const gameBox = document.getElementById('gameContainer');
-    if (gameBox) {
+    if (gameBox && !document.getElementById('loadingScreen')) {
         const loadScreen = document.createElement('div'); loadScreen.id = 'loadingScreen';
         loadScreen.innerHTML = `<div class="loader-title">CURSED DASH</div><div class="loader-bar"><div id="loaderFill"></div></div><div id="loaderText">Загрузка ресурсов движка...</div>`;
         gameBox.appendChild(loadScreen);
@@ -130,32 +173,29 @@ document.addEventListener("DOMContentLoaded", () => {
             if(fill) fill.style.width = pct + '%'; if(txt) txt.textContent = `Загрузка: ${name} (${pct}%)`;
         };
 
-        // Загружаем текстуры картинок
         for(let img of images) {
             await new Promise(r => {
                 const i = new Image(); i.src = `assets/images/${img}`;
                 i.onload = () => { updateBar(img); r(); }; 
-                i.onerror = () => { updateBar(img + ' (Ошибка 404)'); r(); }; // Если картинки нет, не виснем!
+                i.onerror = () => { updateBar(img + ' (CSS костыль)'); r(); }; 
             });
         }
         
-        // КРИТИЧЕСКИЙ ФИКС: Защищаем аудиоплеер от зависания при ошибке 404!
+        // ЖЕЛЕЗНЫЙ ФИКС: Оборачиваем загрузку музыки в Promise с тайм-аутом, чтобы игра не висла из-за ошибок 404!
         for(let track of tracks) {
             await new Promise(async (r) => {
+                let trackLoaded = false;
+                setTimeout(() => { if(!trackLoaded) { console.log("Таймаут трека:", track); r(); } }, 600); // Максимум 0.6 сек на файл
                 try {
                     if(window.AudioEngine && window.AudioEngine.loadTrackPromise) {
-                        // Пытаемся безопасно загрузить трек
                         await window.AudioEngine.loadTrackPromise(track);
                     }
-                } catch(err) {
-                    console.log("Трек пропущен из-за отсутствия файла:", track);
-                }
-                updateBar(track);
-                r(); // Принудительно разблокируем очередь загрузки в любом случае!
+                } catch(err) {}
+                trackLoaded = true; updateBar(track); r();
             });
         }
         
-        // Загрузка гарантированно окончена, плавно включаем главное меню
+        // Всё готово — убираем экран загрузки и полностью разблокируем CSS меню
         setTimeout(() => {
             const ls = document.getElementById('loadingScreen'); if(ls) ls.remove();
         }, 300);
@@ -176,6 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('btnEditorExit', () => window.MenuEngine.backToMenu());
     bindClick('btnGameOverExit', () => window.MenuEngine.backToMenu());
     if (window.Game.DOM.stopTestBtn) { window.Game.DOM.stopTestBtn.addEventListener('click', () => window.MenuEngine.backToMenu()); }
+    
     bindClick('toolSpikeFloor', () => window.EditorEngine.setTool('spike-floor'));
     bindClick('toolSpikeCeil', () => window.EditorEngine.setTool('spike-ceil'));
     bindClick('toolBlock', () => window.EditorEngine.setTool('solid-block'));
@@ -184,12 +225,13 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('toolOrbPink', () => window.EditorEngine.setTool('orb-pink'));
     bindClick('toolOrbRed', () => window.EditorEngine.setTool('orb-red'));
     bindClick('toolPadYellow', () => window.EditorEngine.setTool('pad-yellow'));
-    bindClick('toolPadPink', () => window.EditorEngine.setTool('pad-pink'));
+    bindClick('toolPink', () => window.EditorEngine.setTool('pad-pink'));
     bindClick('toolPadRed', () => window.EditorEngine.setTool('pad-red'));
     bindClick('toolSlow', () => window.EditorEngine.setTool('speed-slow'));
     bindClick('toolNorm', () => window.EditorEngine.setTool('speed-normal'));
     bindClick('toolFast', () => window.EditorEngine.setTool('speed-fast'));
     bindClick('toolEraser', () => window.EditorEngine.setTool('eraser'));
+    
     window.Game.toggleSkins = function(show) { window.MenuEngine.initDOMRefs(); window.Game.DOM.mainMenuScreen.style.display = show ? 'none' : 'flex'; window.Game.DOM.skinSelectScreen.style.display = show ? 'flex' : 'none'; if (!show) { window.Game.gameActive = false; window.Game.isEditorMode = false; window.MenuEngine.renderSavedLevels(); } };
     window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); };
     window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; const s = window.Game.SKINS[window.Game.selectedSkinIndex]; window.Game.DOM.cube.style.background = s.bg; window.Game.DOM.cube.textContent = s.text; window.Game.DOM.cube.style.display = 'flex'; window.Game.DOM.cube.style.boxShadow = `0 0 15px ${s.bg}`; };
