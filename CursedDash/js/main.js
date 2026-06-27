@@ -69,6 +69,8 @@ window.MenuEngine = {
         this.initDOMRefs(); 
         const lvl = window.EditorEngine.getSavedLevels()[idx]; 
         window.Game.selectedTrack = lvl.track || "1"; 
+        window.Game.currentCustomMp3Url = lvl.customMp3Url || '';
+        
         if (window.Game.DOM.customTrackSelect) window.Game.DOM.customTrackSelect.value = window.Game.selectedTrack; 
         window.Game.customObjects = lvl.objects.map(o => { 
             const el = document.createElement('div'); 
@@ -82,14 +84,20 @@ window.MenuEngine = {
         }); 
         window.MenuEngine.startCustomTest(); 
     },
-    loadAndEditLevel(idx) { const lvl = window.EditorEngine.getSavedLevels()[idx]; this.loadAndPlayLevel(idx); window.Game.isTestingCustom = false; window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; },
-    
-    // ИСПРАВЛЕНИЕ МУЗЫКИ: Инициализируем аудио-контекст браузера прямо в момент нажатия на кнопку уровня!
+    loadAndEditLevel(idx) { 
+        const lvl = window.EditorEngine.getSavedLevels()[idx]; 
+        window.Game.currentCustomMp3Url = lvl.customMp3Url || '';
+        this.loadAndPlayLevel(idx); 
+        window.Game.isTestingCustom = false; 
+        window.EditorEngine.openEditor(); 
+        if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; 
+    },
     startGame(lvl) { 
         this.initDOMRefs(); 
         window.Game.currentLevel = lvl; 
         window.Game.isTestingCustom = false; 
         window.Game.isEditorMode = false; 
+        window.Game.currentCustomMp3Url = ''; 
         if (window.Game.DOM.mainMenuScreen) window.Game.DOM.mainMenuScreen.style.display = 'none'; 
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
@@ -102,6 +110,10 @@ window.MenuEngine = {
         if (window.Game.DOM.editorPanel) window.Game.DOM.editorPanel.style.display = 'none'; 
         window.Game.isTestingCustom = true; 
         window.Game.currentLevel = 'custom'; 
+        
+        const inputField = document.getElementById('customMp3UrlInput');
+        if (inputField) window.Game.currentCustomMp3Url = inputField.value.trim();
+
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'block'; 
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
@@ -120,7 +132,6 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('btnPlayLvl2', () => window.MenuEngine.startGame(2));
     bindClick('btnPlayLvl3', () => window.MenuEngine.startGame(3));
     
-    // ИСПРАВЛЕНИЕ РЕДАКТОРА: При клике на "Редактор уровней" принудительно прячем кубик
     bindClick('btnOpenEditor', () => { window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; });
     
     bindClick('btnOpenSkins', () => window.Game.toggleSkins(true));
