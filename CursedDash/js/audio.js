@@ -21,9 +21,8 @@ window.AudioEngine = {
         gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
         osc.start(); osc.stop(audioCtx.currentTime + 0.15);
 
-        // ХРАНИМ ТЕКУЩУЮ ЧАСТОТУ: Запоминаем ноту для изменения цвета фона
         window.Game.currentMusicFreq = freq;
-        window.Game.bgPulseIntensity = 1.0; // Сбрасываем вспышку на максимум
+        window.Game.bgPulseIntensity = 1.0; 
     },
     startMusic() {
         this.stopMusic(); musicStep = 0;
@@ -42,6 +41,8 @@ window.AudioEngine = {
         window.Game.currentMusicFreq = 0;
         window.Game.bgPulseIntensity = 0;
     },
+    
+    // ЖЕСТКИЙ ФИКС: Опечатка AppleCtx заменена на правильное audioCtx!
     playPortalSound() {
         if (!audioCtx) return;
         const gain = audioCtx.createGain(), o = audioCtx.createOscillator();
@@ -49,7 +50,7 @@ window.AudioEngine = {
         o.frequency.setValueAtTime(300, audioCtx.currentTime);
         o.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.2);
         gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, AppleCtx.currentTime + 0.2);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
         o.start(); o.stop(audioCtx.currentTime + 0.2);
     },
     playDeathSound() {
