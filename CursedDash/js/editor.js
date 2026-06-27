@@ -1,4 +1,4 @@
-// js/editor.js - Часть 1 из 4
+/* js/editor.js - Часть 1 из 2 */
 if (!window.EditorEngine) {
     window.EditorEngine = {
         openEditor() { 
@@ -26,7 +26,6 @@ if (!window.EditorEngine) {
             }
             this.updateEditorView(); 
         },
-// js/editor.js - Часть 2 из 4
         updateEditorView() { 
             window.Game.customObjects.forEach(obj => { 
                 if (obj.element) {
@@ -48,7 +47,7 @@ if (!window.EditorEngine) {
             };
             if(toolsMap[tool] && document.getElementById(toolsMap[tool])) { document.getElementById(toolsMap[tool]).classList.add('active'); }
         },
-// js/editor.js - Часть 3 из 4
+/* js/editor.js - Часть 2 из 2 */
         saveCustomLevelPrompt() { 
             if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой уровень!"); return; } 
             const name = prompt("Введите название уровня:", "Кастом " + (this.getSavedLevels().length + 1)); 
@@ -62,15 +61,13 @@ if (!window.EditorEngine) {
         },
         getSavedLevels() { const data = localStorage.getItem('gd_custom_levels'); return data ? JSON.parse(data) : []; },
         clearCustomLevel() { window.Game.customObjects.forEach(obj => { if(obj.element) obj.element.remove(); }); window.Game.customObjects = []; },
-// js/editor.js - Часть 4 из 4
-        // МЕГА-ФИКС ДЛЯ ВЫКЛАДЫВАНИЯ: Превращаем массив в чистую JSON строку, убирая пустые баги!
+        
         publishOfficialLevel() {
             if (window.Game.customObjects.length === 0) { alert("Нельзя выложить пустую карту!"); return; }
             const lvlNum = prompt("На место какого Официального Уровня выложить карту? (Введите число 1, 2 или 3):", "1");
             if (lvlNum !== "1" && lvlNum !== "2" && lvlNum !== "3") { alert("Введите только 1, 2 или 3!"); return; }
             
             const dataToPublish = window.Game.customObjects.map(o => ({ type: o.type, x: parseInt(o.x, 10), bottom: parseInt(o.bottom, 10), width: parseInt(o.width, 10), height: parseInt(o.height, 10) }));
-            // Жестко фиксируем строку JSON в память
             localStorage.setItem(`gd_official_level_${lvlNum}`, JSON.stringify(dataToPublish));
             alert(`Уровень успешно ОПУБЛИКОВАН на место Официального Уровня ${lvlNum}! Переходи на главную страницу и проверяй!`);
         },
@@ -87,7 +84,6 @@ if (!window.EditorEngine) {
             
             const pubBtn = document.getElementById('btnPublishOfficial'); if (pubBtn) pubBtn.addEventListener('click', () => this.publishOfficialLevel());
 
-            // ЖЕСТКИЙ ФИКС НАЖАТИЯ ПО СЕТКЕ: Указываем кнопкам выбора объектов приоритет
             window.Game.DOM.container.addEventListener('mousedown', (e) => {
                 if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel')) return;
                 if (!window.Game.isEditorMode || window.Game.isMouseOverPanel) return;
