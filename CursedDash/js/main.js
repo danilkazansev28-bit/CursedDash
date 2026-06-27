@@ -28,8 +28,33 @@ window.MenuEngine = {
             progressText: document.getElementById('progressText')
         };
     },
+
+    // ГЕНИАЛЬНАЯ ФУНКЦИЯ: Закрывает ВШЕСТИТУЮ все окна и открывает только ОДНО заданное!
+    switchScreen(activeScreenKey) {
+        this.initDOMRefs();
+        
+        // Массив всех наших интерфейсных окон в игре
+        const allScreens = {
+            mainMenu: window.Game.DOM.mainMenuScreen,
+            editor: window.Game.DOM.editorPanel,
+            skins: window.Game.DOM.skinSelectScreen,
+            gameOver: window.Game.DOM.gameOverScreen
+        };
+
+        // Пробегаемся циклом: если окно совпало — включаем (flex), если нет — выключаем (none)
+        for (let key in allScreens) {
+            if (allScreens[key]) {
+                if (key === activeScreenKey) {
+                    allScreens[key].style.display = (key === 'editor') ? 'flex' : 'flex';
+                } else {
+                    allScreens[key].style.display = 'none';
+                }
+            }
+        }
+    },
+
     gameOver() { 
-        this.initDOMRefs(); 
+        this.switchScreen('gameOver');
         window.Game.gameActive = false; 
         if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; 
         window.AudioEngine.stopMusic(); 
@@ -42,7 +67,6 @@ window.MenuEngine = {
         } else { 
             if (window.Game.DOM.finalScore) window.Game.DOM.finalScore.textContent = Math.floor(window.Game.score) + " очков"; 
         } 
-        if (window.Game.DOM.gameOverScreen) window.Game.DOM.gameOverScreen.style.display = 'flex'; 
     },
 // js/main.js - Часть 2 из 4
     renderSavedLevels() { 
@@ -104,20 +128,18 @@ window.MenuEngine = {
     },
 // js/main.js - Часть 3 из 4
     startGame(lvl) { 
-        this.initDOMRefs(); 
+        this.switchScreen('none'); // Прячем все меню, игра пошла!
         window.Game.currentLevel = lvl; 
         window.Game.isTestingCustom = false; 
         window.Game.isEditorMode = false; 
-        if (window.Game.DOM.mainMenuScreen) window.Game.DOM.mainMenuScreen.style.display = 'none'; 
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
         if (window.AudioEngine) window.AudioEngine.initAudio(); 
         window.PhysicsEngine.resetGame(); 
     },
     startCustomTest() { 
-        this.initDOMRefs(); 
+        this.switchScreen('none');
         window.Game.isEditorMode = false; 
-        if (window.Game.DOM.editorPanel) window.Game.DOM.editorPanel.style.display = 'none'; 
         window.Game.isTestingCustom = true; 
         window.Game.currentLevel = 'custom'; 
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
@@ -128,10 +150,8 @@ window.MenuEngine = {
     },
     backToMenu() { 
         this.initDOMRefs(); 
-        if (window.Game.DOM.gameOverScreen) window.Game.DOM.gameOverScreen.style.display = 'none'; 
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'none'; 
         if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'none'; 
-        if (window.Game.DOM.editorPanel) window.Game.DOM.editorPanel.style.display = 'none'; 
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'none'; 
         window.PhysicsEngine.clearGameContainer(); 
         
@@ -143,7 +163,10 @@ window.MenuEngine = {
             window.Game.isEditorMode = false; 
             window.Game.customObjects.forEach(obj => { if(obj.element) obj.element.remove(); }); 
             window.Game.customObjects = []; 
-            if (window.Game.DOM.mainMenuScreen) window.Game.DOM.mainMenuScreen.style.display = 'flex'; 
+            
+            // Запускаем автоматический вызов главного меню!
+            this.switchScreen('mainMenu');
+            
             this.renderSavedLevels(); 
             window.AudioEngine.stopMusic(); 
             window.Game.gameActive = false; 
@@ -177,15 +200,13 @@ document.addEventListener("DOMContentLoaded", () => {
             await new Promise(r => {
                 const i = new Image(); i.src = `assets/images/${img}`;
                 i.onload = () => { updateBar(img); r(); }; 
-                i.onerror = () => { updateBar(img + ' (CSS костыль)'); r(); }; 
+                i.onerror = () => { updateBar(img + ' (CSS заглушка)'); r(); }; 
             });
         }
-        
-        // ЖЕЛЕЗНЫЙ ФИКС: Оборачиваем загрузку музыки в Promise с тайм-аутом, чтобы игра не висла из-за ошибок 404!
         for(let track of tracks) {
             await new Promise(async (r) => {
                 let trackLoaded = false;
-                setTimeout(() => { if(!trackLoaded) { console.log("Таймаут трека:", track); r(); } }, 600); // Максимум 0.6 сек на файл
+                setTimeout(() => { if(!trackLoaded) r(); }, 600);
                 try {
                     if(window.AudioEngine && window.AudioEngine.loadTrackPromise) {
                         await window.AudioEngine.loadTrackPromise(track);
@@ -194,10 +215,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 trackLoaded = true; updateBar(track); r();
             });
         }
-        
-        // Всё готово — убираем экран загрузки и полностью разблокируем CSS меню
         setTimeout(() => {
             const ls = document.getElementById('loadingScreen'); if(ls) ls.remove();
+            window.MenuEngine.switchScreen('mainMenu'); // Принудительно открываем только главное меню!
         }, 300);
     };
     preloadEverything();
@@ -207,8 +227,8 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('btnPlayLvl2', () => window.MenuEngine.startGame(2));
     bindClick('btnPlayLvl3', () => window.MenuEngine.startGame(3));
     bindClick('btnOpenEditor', () => { window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; });
-    bindClick('btnOpenSkins', () => window.Game.toggleSkins(true));
-    bindClick('btnCloseSkins', () => window.Game.toggleSkins(false));
+    bindClick('btnOpenSkins', () => window.MenuEngine.switchScreen('skins')); // Фикс кнопки скинов!
+    bindClick('btnCloseSkins', () => window.MenuEngine.switchScreen('mainMenu')); // Выход из скинов!
     bindClick('btnStartTest', () => window.MenuEngine.startCustomTest());
     bindClick('btnSaveLevel', () => window.EditorEngine.saveCustomLevelPrompt());
     bindClick('btnClearLevel', () => window.EditorEngine.clearCustomLevel());
@@ -232,8 +252,8 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('toolFast', () => window.EditorEngine.setTool('speed-fast'));
     bindClick('toolEraser', () => window.EditorEngine.setTool('eraser'));
     
-    window.Game.toggleSkins = function(show) { window.MenuEngine.initDOMRefs(); window.Game.DOM.mainMenuScreen.style.display = show ? 'none' : 'flex'; window.Game.DOM.skinSelectScreen.style.display = show ? 'flex' : 'none'; if (!show) { window.Game.gameActive = false; window.Game.isEditorMode = false; window.MenuEngine.renderSavedLevels(); } };
-    window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); };
+    window.Game.toggleSkins = function(show) { window.MenuEngine.switchScreen(show ? 'skins' : 'mainMenu'); };
+    window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); window.Game.applySkin(); };
     window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; const s = window.Game.SKINS[window.Game.selectedSkinIndex]; window.Game.DOM.cube.style.background = s.bg; window.Game.DOM.cube.textContent = s.text; window.Game.DOM.cube.style.display = 'flex'; window.Game.DOM.cube.style.boxShadow = `0 0 15px ${s.bg}`; };
     window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); window.PhysicsEngine.pressAction(); } });
     window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); window.PhysicsEngine.releaseAction(); } });
