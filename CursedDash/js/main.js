@@ -1,11 +1,11 @@
-// js/main.js - Часть 1 из 2
+// js/main.js - Часть 1 из 4
 import './state.js';
 import './audio.js';
 import './testNormal.js';
 import './testCustom.js';
 import './effects.js';
 import './physics.js';
-import './editor.js'; // ЖЕСТКИЙ ФИКС: Убрали знак вопроса, вернули чистый рабочий импорт!
+import './editor.js';
 
 window.MenuEngine = {
     initDOMRefs() {
@@ -44,6 +44,7 @@ window.MenuEngine = {
         } 
         if (window.Game.DOM.gameOverScreen) window.Game.DOM.gameOverScreen.style.display = 'flex'; 
     },
+// js/main.js - Часть 2 из 4
     renderSavedLevels() { 
         this.initDOMRefs(); 
         if (!window.Game.DOM.levelsListContainer) return; 
@@ -89,6 +90,7 @@ window.MenuEngine = {
         window.EditorEngine.openEditor(); 
         if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; 
     },
+// js/main.js - Часть 3 из 4
     startGame(lvl) { 
         this.initDOMRefs(); 
         window.Game.currentLevel = lvl; 
@@ -114,18 +116,50 @@ window.MenuEngine = {
     },
     backToMenu() { this.initDOMRefs(); if (window.Game.DOM.gameOverScreen) window.Game.DOM.gameOverScreen.style.display = 'none'; if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'none'; if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'none'; if (window.Game.DOM.editorPanel) window.Game.DOM.editorPanel.style.display = 'none'; if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'none'; window.PhysicsEngine.clearGameContainer(); if (window.Game.isTestingCustom) { window.Game.isTestingCustom = false; window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; } else { window.Game.isEditorMode = false; window.Game.customObjects.forEach(obj => obj.element.remove()); window.Game.customObjects = []; if (window.Game.DOM.mainMenuScreen) window.Game.DOM.mainMenuScreen.style.display = 'flex'; this.renderSavedLevels(); window.AudioEngine.stopMusic(); window.Game.gameActive = false; if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'flex'; } }
 };
-// js/main.js - Часть 2 из 2
+// js/main.js - Часть 4 из 4
 document.addEventListener("DOMContentLoaded", () => {
+    const gameBox = document.getElementById('gameContainer');
+    if (gameBox) {
+        const loadScreen = document.createElement('div'); loadScreen.id = 'loadingScreen';
+        loadScreen.innerHTML = `<div class="loader-title">CURSED DASH</div><div class="loader-bar"><div id="loaderFill"></div></div><div id="loaderText">Загрузка ресурсов движка...</div>`;
+        gameBox.appendChild(loadScreen);
+    }
+
     window.MenuEngine.initDOMRefs(); window.EditorEngine.initEditorEvents(); window.MenuEngine.renderSavedLevels();
     
+    const preloadEverything = async () => {
+        const images = ['block.png', 'cube.png', 'portal.png', 'ship.png', 'speed.png', 'spike.png'];
+        const tracks = ['bozza.mp3', 'subscribe.mp3', 'bob.mp3'];
+        const total = images.length + tracks.length; let loadedCount = 0;
+
+        const updateBar = (name) => {
+            loadedCount++; let pct = Math.floor((loadedCount / total) * 100);
+            const fill = document.getElementById('loaderFill'), txt = document.getElementById('loaderText');
+            if(fill) fill.style.width = pct + '%'; if(txt) txt.textContent = `Загрузка: assets/images/${name} (${pct}%)`;
+        };
+
+        for(let img of images) {
+            await new Promise(r => {
+                const i = new Image(); i.src = `/assets/images/${img}`;
+                i.onload = () => { updateBar(img); r(); }; i.onerror = () => { updateBar(img); r(); };
+            });
+        }
+        for(let track of tracks) {
+            if(window.AudioEngine && window.AudioEngine.loadTrackPromise) {
+                await window.AudioEngine.loadTrackPromise(track); updateBar(track);
+            }
+        }
+        setTimeout(() => {
+            const ls = document.getElementById('loadingScreen'); if(ls) ls.remove();
+        }, 300);
+    };
+    preloadEverything();
+
     const bindClick = (id, action) => { try { const el = document.getElementById(id); if (el) el.addEventListener('click', action); } catch(e){} };
-    
     bindClick('btnPlayLvl1', () => window.MenuEngine.startGame(1));
     bindClick('btnPlayLvl2', () => window.MenuEngine.startGame(2));
     bindClick('btnPlayLvl3', () => window.MenuEngine.startGame(3));
-    
     bindClick('btnOpenEditor', () => { window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; });
-    
     bindClick('btnOpenSkins', () => window.Game.toggleSkins(true));
     bindClick('btnCloseSkins', () => window.Game.toggleSkins(false));
     bindClick('btnStartTest', () => window.MenuEngine.startCustomTest());
@@ -134,9 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('btnEditExit', () => window.MenuEngine.backToMenu());
     bindClick('btnEditorExit', () => window.MenuEngine.backToMenu());
     bindClick('btnGameOverExit', () => window.MenuEngine.backToMenu());
-    
     if (window.Game.DOM.stopTestBtn) { window.Game.DOM.stopTestBtn.addEventListener('click', () => window.MenuEngine.backToMenu()); }
-    
     bindClick('toolSpikeFloor', () => window.EditorEngine.setTool('spike-floor'));
     bindClick('toolSpikeCeil', () => window.EditorEngine.setTool('spike-ceil'));
     bindClick('toolBlock', () => window.EditorEngine.setTool('solid-block'));
@@ -151,11 +183,9 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('toolNorm', () => window.EditorEngine.setTool('speed-normal'));
     bindClick('toolFast', () => window.EditorEngine.setTool('speed-fast'));
     bindClick('toolEraser', () => window.EditorEngine.setTool('eraser'));
-    
     window.Game.toggleSkins = function(show) { window.MenuEngine.initDOMRefs(); window.Game.DOM.mainMenuScreen.style.display = show ? 'none' : 'flex'; window.Game.DOM.skinSelectScreen.style.display = show ? 'flex' : 'none'; if (!show) { window.Game.gameActive = false; window.Game.isEditorMode = false; window.MenuEngine.renderSavedLevels(); } };
     window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); };
     window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; const s = window.Game.SKINS[window.Game.selectedSkinIndex]; window.Game.DOM.cube.style.background = s.bg; window.Game.DOM.cube.textContent = s.text; window.Game.DOM.cube.style.display = 'flex'; window.Game.DOM.cube.style.boxShadow = `0 0 15px ${s.bg}`; };
-    
     window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); window.PhysicsEngine.pressAction(); } });
     window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); window.PhysicsEngine.releaseAction(); } });
     window.addEventListener('mousedown', (e) => { if (window.Game.isEditorMode) return; if (!e.target.closest('#editorPanel') && !e.target.closest('button')) { window.AudioEngine.initAudio(); window.PhysicsEngine.pressAction(); } });
