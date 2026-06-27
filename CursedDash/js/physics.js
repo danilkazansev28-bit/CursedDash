@@ -8,13 +8,10 @@ import './effects.js';
 window.PhysicsEngine = {
     pressAction() { 
         if (!window.Game.gameActive || window.Game.isEditorMode) return; 
-        
-        // Если мы в воздухе в режиме куба, зажатие принудительно ИГНОРИРУЕТСЯ И ВЫКЛЮЧАЕТСЯ
         if (window.Game.currentMode === 'cube' && !window.Game.isGrounded) {
             window.Game.isHoldingAction = false;
             return;
         }
-        
         window.Game.isHoldingAction = true; 
         
         if (window.Game.isInsideOrb && window.Game.currentMode === 'cube') {
@@ -26,18 +23,16 @@ window.PhysicsEngine = {
             }
             window.Game.cubeVelocityY = jumpPower; 
             window.Game.isGrounded = false; 
-            window.Game.isHoldingAction = false; // Автовыключение функции до приземления!
+            window.Game.isHoldingAction = false;
             window.Game.targetRotation += 180; 
             window.Game.rotationSpeed = 180 / Math.abs((2 * jumpPower) / window.Game.GRAVITY_CUBE); 
             window.AudioEngine.playPortalSound(); 
             return;
         }
-        
-        // Одиночный прыжок с земли: подпрыгиваем и мгновенно вырубаем зажатие
         if (window.Game.currentMode === 'cube' && window.Game.isGrounded) { 
             window.Game.cubeVelocityY = window.Game.JUMP_CUBE; 
             window.Game.isGrounded = false; 
-            window.Game.isHoldingAction = false; // Автоматически вырубаем функцию в воздухе!
+            window.Game.isHoldingAction = false;
             window.Game.targetRotation += 180; 
             window.Game.rotationSpeed = 180 / Math.abs((2 * window.Game.JUMP_CUBE) / window.Game.GRAVITY_CUBE); 
         } 
@@ -73,28 +68,13 @@ window.PhysicsEngine = {
 
         if (window.Game.currentMode === 'cube') {
             window.Game.cubeVelocityY += window.Game.GRAVITY_CUBE; window.Game.cubeY += window.Game.cubeVelocityY;
-            
-            // КАСАНИЕ ПОЛА: Скрипт сообщает функции, что мы на земле, и разрешает активацию!
             if (window.Game.cubeY >= 0) { 
-                window.Game.cubeY = 0; 
-                window.Game.cubeVelocityY = 0; 
-                window.Game.isGrounded = true; 
-                window.Game.rotation = window.Game.targetRotation; 
-                
-                // Функция снова активна! Если клавиша всё ещё удерживается после приземления — прыгаем заново
+                window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; window.Game.rotation = window.Game.targetRotation; 
                 if (window.Game.isHoldingAction) {
-                    window.Game.cubeVelocityY = window.Game.JUMP_CUBE; 
-                    window.Game.isGrounded = false; 
-                    window.Game.isHoldingAction = false; // Сразу выключаем до следующего приземления!
-                    window.Game.targetRotation += 180; 
-                    window.Game.rotationSpeed = 180 / Math.abs((2 * window.Game.JUMP_CUBE) / window.Game.GRAVITY_CUBE); 
+                    window.Game.cubeVelocityY = window.Game.JUMP_CUBE; window.Game.isGrounded = false; window.Game.isHoldingAction = false;
+                    window.Game.targetRotation += 180; window.Game.rotationSpeed = 180 / Math.abs((2 * window.Game.JUMP_CUBE) / window.Game.GRAVITY_CUBE); 
                 }
-            } else {
-                // Если мы в воздухе — функция зажатия принудительно заблокирована
-                if (!window.Game.isHoldingAction) { window.Game.isHoldingAction = false; }
-                window.Game.isGrounded = false;
-            }
-            
+            } else { window.Game.isGrounded = false; }
             if (!window.Game.isGrounded && window.Game.rotation < window.Game.targetRotation) { 
                 window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; 
             }
@@ -111,7 +91,6 @@ window.PhysicsEngine = {
         if (liveCube) {
             liveCube.style.transform = `translateY(${window.Game.cubeY}px)`;
             liveCube.style.backgroundImage = `url("/assets/images/${window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png'}")`;
-            
             let debugDiv = liveCube.querySelector('.debug-hitbox');
             if (debugDiv && window.Game.showHitboxes) { debugDiv.style.transform = `rotate(${window.Game.rotation}deg)`; } 
             else { liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`; }
@@ -139,26 +118,15 @@ window.PhysicsEngine = {
         for (let i = window.Game.solidBlocks.length - 1; i >= 0; i--) {
             const b = window.Game.solidBlocks[i]; b.x -= finalMovementSpeed; b.element.style.left = b.x + 'px';
             b.element.style.backgroundImage = "url('/assets/images/block.png')";
-            
             this.drawHitboxDebug(b.element, 'solid', 40, 40);
-
             if (b.x < -50) { b.element.remove(); window.Game.solidBlocks.splice(i, 1); continue; }
             if (cR > b.x && cL < b.x + b.width && cT > b.bottom && cB < b.bottom + b.height) {
                 const overlapY = cB - (b.bottom + b.height);
                 if (window.Game.cubeVelocityY >= 0 && overlapY >= -12) {
-                    window.Game.cubeY = 50 - (b.bottom + b.height); 
-                    window.Game.cubeVelocityY = 0; 
-                    window.Game.isGrounded = true; 
-                    standingOnBlock = true; 
-                    window.Game.rotation = window.Game.targetRotation;
-
-                    // КАСАНИЕ БЛОКА СВЕРХУ: Включаем функцию обратно и даем прыгнуть дальше!
+                    window.Game.cubeY = 50 - (b.bottom + b.height); window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; standingOnBlock = true; window.Game.rotation = window.Game.targetRotation;
                     if (window.Game.isHoldingAction && window.Game.currentMode === 'cube') {
-                        window.Game.cubeVelocityY = window.Game.JUMP_CUBE; 
-                        window.Game.isGrounded = false; 
-                        window.Game.isHoldingAction = false; // Снова отключаем в воздухе!
-                        window.Game.targetRotation += 180; 
-                        window.Game.rotationSpeed = 180 / Math.abs((2 * window.Game.JUMP_CUBE) / window.Game.GRAVITY_CUBE); 
+                        window.Game.cubeVelocityY = window.Game.JUMP_CUBE; window.Game.isGrounded = false; window.Game.isHoldingAction = false;
+                        window.Game.targetRotation += 180; window.Game.rotationSpeed = 180 / Math.abs((2 * window.Game.JUMP_CUBE) / window.Game.GRAVITY_CUBE); 
                     }
                 } else { if (cR - p > b.x && cL + p < b.x + b.width && window.Game.spawnProtectionFrames === 0) { window.MenuEngine.gameOver(); } }
             }
@@ -173,8 +141,7 @@ window.PhysicsEngine = {
                 let bouncePower = window.Game.JUMP_CUBE * 1.15;
                 if (pd.type === 'pad-pink') bouncePower = window.Game.JUMP_CUBE * 0.8;
                 if (pd.type === 'pad-red') bouncePower = window.Game.JUMP_CUBE * 1.6;
-                window.Game.cubeVelocityY = bouncePower; window.Game.isGrounded = false;
-                window.Game.isHoldingAction = false; // Принудительный сброс на батутах
+                window.Game.cubeVelocityY = bouncePower; window.Game.isGrounded = false; window.Game.isHoldingAction = false;
                 window.Game.targetRotation += 180; window.Game.rotationSpeed = 180 / Math.abs((2 * bouncePower) / window.Game.GRAVITY_CUBE);
                 window.AudioEngine.playPortalSound(); window.Game.padCooldown = 15; 
             }
@@ -205,24 +172,29 @@ window.PhysicsEngine = {
         for (let i = window.Game.spikes.length - 1; i >= 0; i--) { 
             const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; 
             spike.element.style.backgroundImage = "url('/assets/images/spike.png')";
-            
             let clipStyle = spike.type === 'spike-ceil' ? 'clip-path:polygon(0% 0%, 100% 0%, 50% 100%)' : 'clip-path:polygon(50% 0%, 0% 100%, 100% 100%)';
             this.drawHitboxDebug(spike.element, 'spike', 40, 40, clipStyle);
-
             if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } 
             if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { 
                 if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } 
             } 
         }
         if (!window.Game.showHitboxes) { document.querySelectorAll('.debug-hitbox').forEach(h => h.remove()); }
-
         if (window.Game.animationFrameId) cancelAnimationFrame(window.Game.animationFrameId);
         window.Game.animationFrameId = requestAnimationFrame(() => this.update());
     },
+
+    // ГЕНИАЛЬНЫЙ СБРОС КЭША И СОСТОЯНИЯ: Вызывается КАЖДЫЙ РАЗ при старте любого уровня!
     resetGame() {
         if (window.Game.animationFrameId) { cancelAnimationFrame(window.Game.animationFrameId); window.Game.animationFrameId = null; }
-        window.Game.gameActive = false; this.clearGameContainer(); 
-        window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; window.Game.rotation = 0; window.Game.targetRotation = 0; window.Game.currentMode = 'cube'; window.Game.currentSpeedMultiplier = 1.0; window.Game.spawnProtectionFrames = 15; window.Game.isHoldingAction = false; window.Game.isInsideOrb = false; window.Game.activeOrbIndex = -1; window.Game.padCooldown = 0;
+        
+        // ЖЕСТКИЙ СБРОС КЭША НАЖАТИЙ: Принудительно выключаем зажатие и любые фантомные клики из меню!
+        window.Game.isHoldingAction = false;
+        window.Game.gameActive = false; 
+        
+        this.clearGameContainer(); 
+        
+        window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; window.Game.rotation = 0; window.Game.targetRotation = 0; window.Game.currentMode = 'cube'; window.Game.currentSpeedMultiplier = 1.0; window.Game.spawnProtectionFrames = 25; window.Game.isInsideOrb = false; window.Game.activeOrbIndex = -1; window.Game.padCooldown = 0;
         const liveCube = document.getElementById('cube'); if (liveCube) { liveCube.style.display = 'flex'; liveCube.style.transform = `translateY(0px) rotate(0deg)`; }
         window.Game.score = 0; window.Game.currentSpeed = window.Game.LEVEL_DATA[window.Game.currentLevel] ? window.Game.LEVEL_DATA[window.Game.currentLevel].speed : 5.5; window.Game.spawnTimer = 0; 
         const liveScore = document.getElementById('scoreVal'); if (liveScore) liveScore.textContent = '0'; 
