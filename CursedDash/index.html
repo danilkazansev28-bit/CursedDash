@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geometry Dash Sandbox</title>
-    <!-- Автоматический сброс кэша стилей при каждой загрузке страницы -->
+    <!-- Автоматический сброс кэша стилей при каждом перезапуске страницы -->
     <script>
         const styleLink = document.createElement('link');
         styleLink.rel = 'stylesheet';
@@ -15,11 +15,18 @@
 </head>
 <body>
     <div id="gameContainer">
+        <!-- КРИТИЧЕСКИЙ ФИКС ЛОАДЕРА: Выносим его в самый верх HTML-дерева -->
+        <div id="loadingScreen">
+            <div class="loader-title">CURSED DASH</div>
+            <div class="loader-bar"><div id="loaderFill"></div></div>
+            <div id="loaderText">Подключение к движку...</div>
+        </div>
+
         <div id="objectsLayer"></div>
         <div id="cube"></div>
 
         <!-- ГЛАВНОЕ МЕНЮ ИГРЫ -->
-        <div id="mainMenuScreen">
+        <div id="mainMenuScreen" style="display: none;">
             <div class="menu-title">Geometry Dash Sandbox</div>
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                 <button class="menu-btn" id="btnPlayLvl1">Уровень 1</button>
@@ -64,12 +71,13 @@
             <div id="progressText">0%</div>
         </div>
 
-        <!-- ЛЕВАЯ ВЕРТИКАЛЬНАЯ ПАНЕЛЬ ТЕСТА И УПРАВЛЕНИЯ -->
+        <!-- ЛЕВАЯ ВЕРТИКАЛЬНАЯ ПАНЕЛЬ УПРАВЛЕНИЯ -->
         <div id="editorLeftPanel">
             <button class="side-btn" id="btnEditorExit" style="background: #e94560;">В меню</button>
             <div class="side-divider"></div>
             <button class="side-btn" id="btnStartTest" style="background: #00ff88; color: #111;">ТЕСТ</button>
             <button class="side-btn" id="btnSaveLevel" style="background: #00bfff; color: #111;">СОХРАНИТЬ</button>
+            <!-- Секретная золотая кнопка публикации -->
             <button class="side-btn" id="btnPublishOfficial" style="background: #ffaa00; color: #111; display: none; font-size: 9px; box-shadow: 0 0 10px #ffaa00; border: 2px solid #fff;">ВЫЛОЖИТЬ</button>
             <button class="side-btn" id="btnClearLevel" style="background: #555;">ОЧИСТКА</button>
             <div class="side-divider"></div>
@@ -98,7 +106,7 @@
         </div>
     </div>
 
-    <!-- ВЕЧНЫЙ АВТОМАТИЧЕСКИЙ СБРОС КЭША: Генерирует уникальный ID при каждом запуске! -->
+    <!-- Вечный автоматический сброс кэша для JavaScript модулей -->
     <script>
         const mainScript = document.createElement('script');
         mainScript.type = 'module';
