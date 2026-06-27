@@ -68,9 +68,18 @@ window.MenuEngine = {
         this.initDOMRefs(); 
         if (!window.Game.DOM.levelsListContainer) return; 
         window.Game.DOM.levelsListContainer.innerHTML = ''; 
+        
+        // Показываем черновики уровней только создателю-админу
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('admin') !== 'mysecret123') {
+            const title = document.getElementById('customLevelsTitle');
+            if (title) title.style.display = 'none';
+            return;
+        }
+
         const levels = window.EditorEngine.getSavedLevels(); 
         if (levels.length === 0) { 
-            window.Game.DOM.levelsListContainer.innerHTML = '<div style="font-size:12px; color:#55547a; text-align:center; padding:10px;">Нет уровней</div>'; 
+            window.Game.DOM.levelsListContainer.innerHTML = '<div style="font-size:12px; color:#55547a; text-align:center; padding:10px;">Нет черновиков</div>'; 
             return; 
         } 
         levels.forEach((lvl, idx) => { 
@@ -184,46 +193,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.MenuEngine.initDOMRefs(); window.EditorEngine.initEditorEvents(); window.MenuEngine.renderSavedLevels();
     
+    // ПРОВЕРКА СОЗДАТЕЛЯ: Ищем параметр ?admin=mysecret123 в строке браузера
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === 'mysecret123') {
+        // Открываем кнопку захода в редактор на главном экране
+        const editorBtn = document.getElementById('btnOpenEditor'); if (editorBtn) editorBtn.style.display = 'block';
+        const title = document.getElementById('customLevelsTitle'); if (title) title.style.display = 'block';
+        // Открываем кнопку публикации выкладывания на левой панели редактора
+        const publishBtn = document.getElementById('btnPublishOfficial'); if (publishBtn) publishBtn.style.display = 'block';
+    }
+
     const preloadEverything = async () => {
         const images = ['block.png', 'cube.png', 'portal.png', 'ship.png', 'speed.png', 'spike.png'];
         const tracks = ['bozza.mp3', 'subscribe.mp3', 'bob.mp3'];
         const total = images.length + tracks.length; let loadedCount = 0;
-
-        const updateBar = (name) => {
-            loadedCount++; let pct = Math.floor((loadedCount / total) * 100);
-            const fill = document.getElementById('loaderFill'), txt = document.getElementById('loaderText');
-            if(fill) fill.style.width = pct + '%'; if(txt) txt.textContent = `Загрузка: ${name} (${pct}%)`;
-        };
-
-        for(let img of images) {
-            await new Promise(r => {
-                const i = new Image(); i.src = `assets/images/${img}`;
-                i.onload = () => { updateBar(img); r(); }; 
-                // АВАРИЙНЫЙ ГЕЙМ-СПАСАТЕЛЬ: Если картинок нет (404), мы НЕ останавливаем игру, а мягко идем дальше!
-                i.onerror = () => { 
-                    updateBar(img + ' (Включен белый куб-прототип)'); 
-                    r(); 
-                }; 
-            });
-        }
-        for(let track of tracks) {
-            await new Promise(async (r) => {
-                let trackLoaded = false; setTimeout(() => { if(!trackLoaded) r(); }, 600);
-                try { if(window.AudioEngine && window.AudioEngine.loadTrackPromise) await window.AudioEngine.loadTrackPromise(track); } catch(err) {}
-                trackLoaded = true; updateBar(track); r();
-            });
-        }
-        setTimeout(() => {
-            const ls = document.getElementById('loadingScreen'); if(ls) ls.remove();
-            window.MenuEngine.switchScreen('mainMenu'); 
-        }, 300);
+        const updateBar = (name) => { loadedCount++; let pct = Math.floor((loadedCount / total) * 100); const fill = document.getElementById('loaderFill'); if(fill) fill.style.width = pct + '%'; };
+        for(let img of images) { await new Promise(r => { const i = new Image(); i.src = `assets/images/${img}`; i.onload = () => { updateBar(img); r(); }; i.onerror = () => { updateBar(img); r(); }; }); }
+        for(let track of tracks) { await new Promise(async (r) => { let trackLoaded = false; setTimeout(() => { if(!trackLoaded) r(); }, 600); try { if(window.AudioEngine && window.AudioEngine.loadTrackPromise) await window.AudioEngine.loadTrackPromise(track); } catch(err) {} trackLoaded = true; updateBar(track); r(); }); }
+        setTimeout(() => { const ls = document.getElementById('loadingScreen'); if(ls) ls.remove(); window.MenuEngine.switchScreen('mainMenu'); }, 300);
     };
     preloadEverything();
 
-    const bindClick = (id, action) => { 
-        try { const el = document.getElementById(id); if (el) el.addEventListener('click', (e) => { e.stopPropagation(); action(); }); } catch(e){} 
-    };
-    
+    const bindClick = (id, action) => { try { const el = document.getElementById(id); if (el) el.addEventListener('click', (e) => { e.stopPropagation(); action(); }); } catch(e){} };
     bindClick('btnPlayLvl1', () => window.MenuEngine.startGame(1));
     bindClick('btnPlayLvl2', () => window.MenuEngine.startGame(2));
     bindClick('btnPlayLvl3', () => window.MenuEngine.startGame(3));
@@ -240,38 +231,10 @@ document.addEventListener("DOMContentLoaded", () => {
     
     window.Game.toggleSkins = function(show) { window.MenuEngine.switchScreen(show ? 'skins' : 'mainMenu'); };
     window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); window.Game.applySkin(); };
+    window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; window.Game.DOM.cube.style.backgroundColor = '#ffffff'; window.Game.DOM.cube.textContent = ''; window.Game.DOM.cube.style.display = 'flex'; };
     
-    // МАКСИМАЛЬНАЯ ОЧИСТКА КУБА: Текст со смайликом シ полностью стирается, возвращая белый квадрат!
-    window.Game.applySkin = function() { 
-        window.MenuEngine.initDOMRefs(); 
-        if (!window.Game.DOM.cube) return; 
-        window.Game.DOM.cube.style.backgroundColor = '#ffffff'; 
-        window.Game.DOM.cube.textContent = ''; // Стираем смайлик シ навсегда!
-        window.Game.DOM.cube.style.display = 'flex'; 
-    };
-    
-    window.addEventListener('keydown', (e) => { 
-        if (e.code === 'Space') { 
-            e.preventDefault(); 
-            if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.pressAction(); 
-        }
-        if (e.code === 'KeyH') { window.Game.showHitboxes = !window.Game.showHitboxes; }
-    });
-    window.addEventListener('keyup', (e) => { 
-        if (e.code === 'Space') { 
-            e.preventDefault(); 
-            if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); 
-        } 
-    });
-    
-    window.Game.DOM.container.addEventListener('mousedown', (e) => { 
-        if (!window.Game.gameActive || window.Game.isEditorMode) return; 
-        if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel') || e.target.closest('#mainMenuScreen') || e.target.closest('#gameOverScreen')) return;
-        window.AudioEngine.initAudio(); 
-        window.PhysicsEngine.pressAction(); 
-    });
-    
-    window.addEventListener('mouseup', () => { 
-        if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); 
-    });
+    window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.pressAction(); } if (e.code === 'KeyH') { window.Game.showHitboxes = !window.Game.showHitboxes; } });
+    window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); } });
+    window.Game.DOM.container.addEventListener('mousedown', (e) => { if (!window.Game.gameActive || window.Game.isEditorMode) return; if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel') || e.target.closest('#mainMenuScreen') || e.target.closest('#gameOverScreen')) return; window.AudioEngine.initAudio(); window.PhysicsEngine.pressAction(); });
+    window.addEventListener('mouseup', () => { if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); });
 });
