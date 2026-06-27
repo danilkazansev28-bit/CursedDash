@@ -21,33 +21,32 @@ body {
     align-items: center; background: #0a0813; z-index: 100;
 }
 
-/* ФИКС ЛЕВОЙ ПАНЕЛИ: Поднимаем приоритет z-index, чтобы мышь свободно нажимала кнопки */
+/* ФИКС СЛОЕВ ПАНЕЛИ РЕДАКТОРА: Выставляем z-index: 600, чтобы мышь свободно кликала по кнопкам */
 #editorLeftPanel {
     position: absolute; left: 0; top: 0; width: 110px; height: calc(100% - 90px);
     background: #111019; border-right: 3px solid #2d2b3d; display: none;
     flex-direction: column; align-items: center; justify-content: flex-start;
-    z-index: 500 !important; padding: 10px 4px; box-sizing: border-box; gap: 8px;
+    z-index: 600 !important; padding: 10px 4px; box-sizing: border-box; gap: 8px;
 }
 .side-btn {
     width: 95px; height: 32px; border: 1px solid #444; color: #fff;
     font-size: 10px; font-weight: bold; cursor: pointer; border-radius: 4px;
     display: inline-flex; align-items: center; justify-content: center;
-    z-index: 510 !important;
+    z-index: 610 !important;
 }
 .side-divider { width: 80%; height: 1px; background: #2d2b3d; margin: 4px 0; }
 
-/* ФИКС НИЖНЕЙ ПАНЕЛИ ОБЪЕКТОВ: Ставим высокий z-index, убирая невидимое перекрытие игрового поля! */
 #editorPanel {
     position: absolute; bottom: 0; left: 0; width: 100%; height: 90px;
     background: #111019; border-top: 3px solid #2d2b3d; display: none;
-    align-items: center; justify-content: flex-start; z-index: 500 !important; padding: 6px 6px 6px 120px;
+    align-items: center; justify-content: flex-start; z-index: 600 !important; padding: 6px 6px 6px 120px;
     overflow-x: auto; box-sizing: border-box; gap: 6px;
 }
 .tool-btn { 
     min-width: 55px; height: 35px; background: #252336; color: #fff; border: 1px solid #444; 
     font-size: 9px; cursor: pointer; border-radius: 4px; display: inline-flex; 
     align-items: center; justify-content: center; font-weight: bold;
-    z-index: 510 !important; /* Кнопки теперь нажимаются гарантированно! */
+    z-index: 610 !important;
 }
 .tool-btn.active { background: #00ff88; color: #000; border-color: #fff; }
 
@@ -80,7 +79,7 @@ body {
 #progressBarFill { width: 0%; height: 100%; background: #00ff88; transition: width 0.05s linear; }
 #progressText { position: absolute; top: -2px; width: 100%; text-align: center; color: #fff; font-size: 10px; font-weight: bold; font-family: sans-serif; }
 
-/* КРИТИЧЕСКИЙ ФИКС ЗАГРУЗОЧНОГО ЭКРАНА: Ставим z-index: 999999, выдвигая его на самый передний план над всеми слоями игры! */
+/* АБСОЛЮТНЫЙ ВЫДВИГ ЛОАДЕРА: Ставим z-index: 999999, перекрывая абсолютно всё геймплейное поле */
 #loadingScreen { 
     position: absolute; width: 100%; height: 100%; top: 0; left: 0; 
     background: #090810; display: flex; flex-direction: column; 
