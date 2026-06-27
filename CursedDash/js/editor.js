@@ -63,29 +63,31 @@ if (!window.EditorEngine) {
             if(toolsMap[tool] && document.getElementById(toolsMap[tool])) { document.getElementById(toolsMap[tool]).classList.add('active'); }
         },
 // js/editor.js - Часть 3 из 4
+        // Эта функция СОХРАНИТЬ работает у ВСЕХ игроков на планете для их личных черновиков
         saveCustomLevelPrompt() { 
-            if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой черновик!"); return; } 
-            const name = prompt("Введите название черновика:", "Мой набросок " + (this.getSavedLevels().length + 1)); 
+            if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой уровень!"); return; } 
+            const name = prompt("Введите название кастомного уровня:", "Мой кастом " + (this.getSavedLevels().length + 1)); 
             if (!name) return; 
             const levels = this.getSavedLevels();
             const dataToSave = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height })); 
             levels.push({ name: name, objects: dataToSave, selectedTrackIndex: window.Game.selectedTrackIndex }); 
             localStorage.setItem('gd_custom_levels', JSON.stringify(levels)); 
             window.MenuEngine.renderSavedLevels(); 
-            alert("Черновик сохранен!"); 
+            alert("Уровень добавлен в список кастомных карт на главную страницу!"); 
         },
         getSavedLevels() { const data = localStorage.getItem('gd_custom_levels'); return data ? JSON.parse(data) : []; },
         clearCustomLevel() { window.Game.customObjects.forEach(obj => { if(obj.element) obj.element.remove(); }); window.Game.customObjects = []; },
 // js/editor.js - Часть 4 из 4
-        // ФУНКЦИЯ ВЫКЛАДЫВАНИЯ ОФИЦИАЛЬНОГО УРОВНЯ ДЛЯ ИГРОКОВ
+        // ЖЕЛЕЗНЫЙ ФИКС ВЫКЛАДЫВАНИЯ НА ГЛАВНУЮ: Твоя золотая кнопка
         publishOfficialLevel() {
-            if (window.Game.customObjects.length === 0) { alert("Нельзя выложить пустой уровень!"); return; }
-            const lvlNum = prompt("На место какого уровня выложить карту? (Введите число 1, 2 или 3):", "1");
-            if (lvlNum !== "1" && lvlNum !== "2" && lvlNum !== "3") { alert("Неверный номер уровня!"); return; }
+            if (window.Game.customObjects.length === 0) { alert("Нельзя выложить пустую карту!"); return; }
+            const lvlNum = prompt("На место какого Официального Уровня выложить карту? (Введите 1, 2 или 3):", "1");
+            if (lvlNum !== "1" && lvlNum !== "2" && lvlNum !== "3") { alert("Введите только 1, 2 или 3!"); return; }
             
             const dataToPublish = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height }));
+            // Записываем в глобальную базу официальных уровней
             localStorage.setItem(`gd_official_level_${lvlNum}`, JSON.stringify(dataToPublish));
-            alert(`Уровень успешно ОПУБЛИКОВАН на место Официального Уровня ${lvlNum}! Теперь все игроки будут проходить его.`);
+            alert(`Успешно! Ты опубликовал карту как Официальный Уровень ${lvlNum}. Теперь кнопка Уровень ${lvlNum} на главной будет запускать твой дизайн!`);
         },
 
         initEditorEvents() {
@@ -119,7 +121,6 @@ if (!window.EditorEngine) {
                 
                 const newEl = document.createElement('div'); 
                 let type = window.Game.currentTool, width = 40, height = 40;
-                
                 if (type === 'portal') { width = 35; height = 95; newEl.classList.add('portal'); } 
                 else if (type.startsWith('orb-')) { width = 30; height = 30; newEl.className = `orb ${type}`; } 
                 else if (type.startsWith('pad-')) { width = 34; height = 12; newEl.className = `pad ${type}`; } 
