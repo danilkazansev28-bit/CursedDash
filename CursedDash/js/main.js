@@ -1,4 +1,4 @@
-// js/main.js - Часть 1 из 4
+/* js/main.js - Часть 1 из 2 */
 import './state.js';
 import './audio.js';
 import './testNormal.js';
@@ -60,7 +60,7 @@ window.MenuEngine = {
             if (window.Game.DOM.finalScore) window.Game.DOM.finalScore.textContent = Math.floor(window.Game.score) + " очков"; 
         } 
     },
-// js/main.js - Часть 2 из 4
+
     renderSavedLevels() { 
         this.initDOMRefs(); 
         if (!window.Game.DOM.levelsListContainer) return; 
@@ -84,7 +84,7 @@ window.MenuEngine = {
     deleteLevel(idx) { if (!confirm("Удалить уровень?")) return; const lvls = window.EditorEngine.getSavedLevels(); lvls.splice(idx, 1); localStorage.setItem('gd_custom_levels', JSON.stringify(lvls)); this.renderSavedLevels(); },
     loadAndPlayLevel(idx) { this.initDOMRefs(); const lvl = window.EditorEngine.getSavedLevels()[idx]; window.Game.selectedTrackIndex = lvl.selectedTrackIndex !== undefined ? lvl.selectedTrackIndex : 0; window.Game.customObjects = lvl.objects.map(o => { const el = document.createElement('div'); if (o.type === 'solid-block') el.className = 'solid-block'; else if (o.type === 'portal') el.className = 'portal'; else if (o.type.startsWith('orb-')) el.className = `orb ${o.type}`; else if (o.type.startsWith('pad-')) el.className = `pad ${o.type}`; else if (o.type.startsWith('speed-')) el.className = `speed-portal ${o.type}`; else { el.className = 'spike'; if (o.type === 'spike-ceil') el.style.transform = 'rotate(180deg)'; } return { element: el, type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height }; }); window.MenuEngine.startCustomTest(); },
     loadAndEditLevel(idx) { this.initDOMRefs(); const lvl = window.EditorEngine.getSavedLevels()[idx]; window.Game.selectedTrackIndex = lvl.selectedTrackIndex !== undefined ? lvl.selectedTrackIndex : 0; window.Game.customObjects = lvl.objects.map(o => { const el = document.createElement('div'); if (o.type === 'solid-block') el.className = 'solid-block'; else if (o.type === 'portal') el.className = 'portal'; else if (o.type.startsWith('orb-')) el.className = `orb ${o.type}`; else if (o.type.startsWith('pad-')) el.className = `pad ${o.type}`; else if (o.type.startsWith('speed-')) el.className = `speed-portal ${o.type}`; else { el.className = 'spike'; if (o.type === 'spike-ceil') el.style.transform = 'rotate(180deg)'; } return { element: el, type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height }; }); window.Game.isTestingCustom = false; window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; },
-// js/main.js - Часть 3 из 4
+/* js/main.js - Часть 2 из 2 */
     startGame(lvl) { 
         this.switchScreen('none'); window.Game.currentLevel = lvl; window.Game.isTestingCustom = false; window.Game.isEditorMode = false; window.Game.isHoldingAction = false; 
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
@@ -106,22 +106,19 @@ window.MenuEngine = {
         else { window.Game.isEditorMode = false; window.Game.customObjects.forEach(obj => { if(obj.element) obj.element.remove(); }); window.Game.customObjects = []; this.switchScreen('mainMenu'); this.renderSavedLevels(); if (window.AudioEngine) window.AudioEngine.stopMusic(); window.Game.gameActive = false; if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'flex'; } 
     }
 };
-// js/main.js - Часть 4 из 4
+
 document.addEventListener("DOMContentLoaded", () => {
     window.MenuEngine.initDOMRefs(); window.EditorEngine.initEditorEvents(); window.MenuEngine.renderSavedLevels();
 
-    // БЕЗОПАСНЫЙ ПРЕЛОАДЕР: Эмулирует красивую загрузку и убирает экран лоадера!
     const preloadEverything = async () => {
         const fill = document.getElementById('loaderFill');
         const txt = document.getElementById('loaderText');
-        const steps = ['Загрузка интерфейса...', 'Проверка слоев...', 'Синхронизация физики...', 'Запуск песочницы...'];
-        
+        const steps = ['Инициализация систем...', 'Проверка слоев...', 'Калибровка физики...', 'Запуск песочницы...'];
         for (let i = 0; i <= 100; i += 25) {
             await new Promise(r => setTimeout(r, 150)); 
             if (fill) fill.style.width = i + '%';
             if (txt && steps[i/25]) txt.textContent = steps[i/25] + ` (${i}%)`;
         }
-        
         setTimeout(() => {
             const ls = document.getElementById('loadingScreen'); if (ls) ls.remove();
             window.MenuEngine.switchScreen('mainMenu');
@@ -136,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const safeBind = (id, action) => { 
         try { const el = document.getElementById(id); if (el) { el.addEventListener('click', (e) => { e.stopPropagation(); action(); }); } } catch(err) {}
     };
-    
     safeBind('btnPlayLvl1', () => window.MenuEngine.startGame(1));
     safeBind('btnPlayLvl2', () => window.MenuEngine.startGame(2));
     safeBind('btnPlayLvl3', () => window.MenuEngine.startGame(3));
@@ -168,7 +164,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.Game.toggleSkins = function(show) { window.MenuEngine.switchScreen(show ? 'skins' : 'mainMenu'); };
     window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); window.Game.applySkin(); };
     window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; window.Game.DOM.cube.style.backgroundColor = '#ffffff'; window.Game.DOM.cube.textContent = ''; window.Game.DOM.cube.style.display = 'flex'; };
-    
     window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.pressAction(); } if (e.code === 'KeyH') { window.Game.showHitboxes = !window.Game.showHitboxes; } });
     window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); } });
     window.Game.DOM.container.addEventListener('mousedown', (e) => { if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel') || e.target.closest('#mainMenuScreen') || e.target.closest('#gameOverScreen')) return; if (!window.Game.gameActive || window.Game.isEditorMode) return; if (window.AudioEngine) window.AudioEngine.initAudio(); window.PhysicsEngine.pressAction(); });
