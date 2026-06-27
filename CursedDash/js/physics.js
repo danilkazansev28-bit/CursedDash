@@ -63,7 +63,6 @@ window.PhysicsEngine = {
                 window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; 
             }
         } else {
-            // ФИКС ОГНЯ: Передаем true или false в зависимости от нажатия. Огонь горит ВСЕГДА!
             if (window.Game.isHoldingAction) { 
                 window.Game.cubeVelocityY += window.Game.THRUST_SHIP; 
                 if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, true);
@@ -119,7 +118,7 @@ window.PhysicsEngine = {
             if (pd.x < -50) { pd.element.remove(); window.Game.pads.splice(i, 1); continue; }
             if (cR > pd.x && cL < pd.x + pd.width && cB <= pd.bottom + pd.height + 4 && cT >= pd.bottom && (!window.Game.padCooldown || window.Game.padCooldown === 0)) {
                 let bouncePower = window.Game.JUMP_CUBE * 1.15;
-                if (pd.type === 'pad-pink') bouncePower = window.Game.JUBE_CUBE * 0.8;
+                if (pd.type === 'pad-pink') bouncePower = window.Game.JUMP_CUBE * 0.8;
                 if (pd.type === 'pad-red') bouncePower = window.Game.JUMP_CUBE * 1.6;
                 window.Game.cubeVelocityY = bouncePower; window.Game.isGrounded = false;
                 window.Game.targetRotation += 180; window.Game.rotationSpeed = 180 / Math.abs((2 * bouncePower) / window.Game.GRAVITY_CUBE);
@@ -138,14 +137,20 @@ window.PhysicsEngine = {
                 } else { 
                     window.Game.currentMode = 'cube'; if (liveCube) liveCube.style.borderRadius = '4px'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
         
-        // КРИТИЧЕСКИЙ ФИКС СКОРОСТИ: Проверяем коллизию по всей высоте (100px) и ширине (40px) объекта!
+        // СУПЕР-ФИКС СКОРОСТИ: Continuous Collision Detection (CCD)
         for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
             const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
             if (sp.x < -50) { sp.element.remove(); window.Game.speedPortals.splice(i, 1); continue; } 
             
-            // Фиксированная высота портала скорости в игре 100 пикселей. Проверяем полное перекрытие по Y
-            let spTop = sp.bottom + 100;
-            if (cR > sp.x && cL < sp.x + 35 && cT > sp.bottom && cB < spTop) { 
+            // Вычисляем виртуальный шлейф хитбокса за текущий кадр.
+            // Даже если ракета пролетела сквозь портал со скоростью 15 пикселей за кадр, этот "луч" поймает пересечение.
+            let portalWidth = 40; // Расширяем физическую ширину триггера для улавливания
+            let portalHeight = 100;
+            
+            let isCollidingX = (cR >= sp.x && cL <= sp.x + portalWidth) || (cR + finalMovementSpeed >= sp.x && cL - finalMovementSpeed <= sp.x + portalWidth);
+            let isCollidingY = cT > sp.bottom && cB < (sp.bottom + portalHeight);
+
+            if (isCollidingX && isCollidingY) { 
                 window.AudioEngine.playPortalSound(); 
                 if (sp.type.includes('slow')) window.Game.currentSpeedMultiplier = 0.65;
                 else if (sp.type.includes('fast')) window.Game.currentSpeedMultiplier = 1.5;
@@ -182,7 +187,7 @@ window.PhysicsEngine = {
                     if (obj.type === 'solid-block') window.Game.solidBlocks.push({ element: elClone, x: obj.x, width: obj.width, height: obj.height, bottom: obj.bottom });
                     else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') window.Game.spikes.push({ element: elClone, type: obj.type, x: obj.x, width: obj.width, height: obj.height, bottom: obj.bottom }); 
                     else if (obj.type === 'portal') window.Game.portals.push({ element: elClone, x: obj.x, width: obj.width, height: obj.height, bottom: obj.bottom }); 
-                    else if (obj.type.startsWith('speed-')) window.Game.speedPortals.push({ element: elClone, x: obj.x, type: obj.type, width: 25, height: 100, bottom: o.bottom || 50 }); 
+                    else if (obj.type.startsWith('speed-')) window.Game.speedPortals.push({ element: elClone, x: obj.x, type: obj.type, width: 25, height: 100, bottom: obj.bottom || 50 }); 
                     else if (obj.type.startsWith('orb-')) window.Game.orbs.push({ element: elClone, type: obj.type, x: obj.x, width: 30, height: 30, bottom: obj.bottom }); 
                     else if (obj.type.startsWith('pad-')) window.Game.pads.push({ element: elClone, type: obj.type, x: obj.x, width: 34, height: 12, bottom: 50 }); 
                 }); 
