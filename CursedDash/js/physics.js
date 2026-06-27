@@ -77,7 +77,14 @@ window.PhysicsEngine = {
         }
         
         const liveCube = document.getElementById('cube');
-        if (liveCube) liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`;
+        if (liveCube) {
+            liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`;
+            const imgPath = window.Game.currentMode === 'cube' ? './assets/images/cube.png' : './assets/images/ship.png';
+            liveCube.style.backgroundImage = `url('${imgPath}'), url('CursedDash/assets/images/${window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png'}')`;
+            liveCube.style.backgroundSize = 'cover';
+            liveCube.style.backgroundColor = 'transparent';
+            liveCube.style.boxShadow = 'none';
+        }
         
         let activeBaseSpeed = window.Game.LEVEL_DATA[window.Game.currentLevel] ? window.Game.LEVEL_DATA[window.Game.currentLevel].speed : 5.5;
         let finalMovementSpeed = activeBaseSpeed * window.Game.currentSpeedMultiplier;
@@ -103,6 +110,7 @@ window.PhysicsEngine = {
 
         for (let i = window.Game.solidBlocks.length - 1; i >= 0; i--) {
             const b = window.Game.solidBlocks[i]; b.x -= finalMovementSpeed; b.element.style.left = b.x + 'px';
+            b.element.style.backgroundImage = "url('./assets/images/block.png'), url('CursedDash/assets/images/block.png')"; b.element.style.backgroundSize = 'cover'; b.element.style.backgroundColor = 'transparent';
             if (b.x < -50) { b.element.remove(); window.Game.solidBlocks.splice(i, 1); continue; }
             if (cR > b.x && cL < b.x + b.width && cT > b.bottom && cB < b.bottom + b.height) {
                 const overlapY = cB - (b.bottom + b.height);
@@ -128,6 +136,7 @@ window.PhysicsEngine = {
         }
         for (let i = window.Game.portals.length - 1; i >= 0; i--) {
             const prt = window.Game.portals[i]; prt.x -= finalMovementSpeed; prt.element.style.left = prt.x + 'px';
+            prt.element.style.backgroundImage = "url('./assets/images/portal.png'), url('CursedDash/assets/images/portal.png')"; prt.element.style.backgroundSize = 'cover'; prt.element.style.backgroundColor = 'transparent';
             if (prt.x < -50) { prt.element.remove(); window.Game.portals.splice(i, 1); continue; }
             if (cR > prt.x && cL < prt.x + prt.width && cB < prt.bottom + prt.height && cT > prt.bottom) {
                 window.AudioEngine.playPortalSound(); prt.element.remove(); window.Game.portals.splice(i, 1);
@@ -139,13 +148,11 @@ window.PhysicsEngine = {
         
         for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
             const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
+            sp.element.style.backgroundImage = "url('./assets/images/speed.png'), url('CursedDash/assets/images/speed.png')"; sp.element.style.backgroundSize = 'cover'; sp.element.style.backgroundColor = 'transparent';
             if (sp.x < -50) { sp.element.remove(); window.Game.speedPortals.splice(i, 1); continue; } 
             
-            let portalWidth = 25; 
-            let portalHeight = 100; 
-            let portalBottom = parseInt(sp.element.style.bottom || sp.bottom || 50, 10); 
-            let portalTop = portalBottom + portalHeight;
-
+            let portalWidth = 25; let portalHeight = 100; 
+            let portalBottom = parseInt(sp.element.style.bottom || sp.bottom || 50, 10); let portalTop = portalBottom + portalHeight;
             let isCollidingX = (cR >= sp.x && cL <= sp.x + portalWidth) || (cR + finalMovementSpeed >= sp.x && cL - finalMovementSpeed <= sp.x + portalWidth);
             let isCollidingY = (cT >= portalBottom && cB <= portalTop);
 
@@ -154,13 +161,18 @@ window.PhysicsEngine = {
                 if (sp.type.includes('slow')) window.Game.currentSpeedMultiplier = 0.65;
                 else if (sp.type.includes('fast')) window.Game.currentSpeedMultiplier = 1.5;
                 else window.Game.currentSpeedMultiplier = 1.0;
-                
                 sp.element.remove(); window.Game.speedPortals.splice(i, 1);
             } 
         }
         
         let insideAnyOrb = false; for (let i = window.Game.orbs.length - 1; i >= 0; i--) { const ob = window.Game.orbs[i]; ob.x -= finalMovementSpeed; ob.element.style.left = ob.x + 'px'; if (ob.x < -50) { ob.element.remove(); window.Game.orbs.splice(i, 1); continue; } if (cR > ob.x && cL < ob.x + ob.width && cB < ob.bottom + ob.height && cT > ob.bottom) { insideAnyOrb = true; window.Game.activeOrbIndex = i; } } window.Game.isInsideOrb = insideAnyOrb; if (!window.Game.isInsideOrb) window.Game.activeOrbIndex = -1;
-        for (let i = window.Game.spikes.length - 1; i >= 0; i--) { const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } } }
+        
+        for (let i = window.Game.spikes.length - 1; i >= 0; i--) { 
+            const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; 
+            spike.element.style.backgroundImage = "url('./assets/images/spike.png'), url('CursedDash/assets/images/spike.png')"; spike.element.style.backgroundSize = 'cover'; spike.element.style.backgroundColor = 'transparent';
+            if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } 
+            if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } } 
+        }
         if (window.EffectsEngine) window.EffectsEngine.updateParticles(); 
         window.Game.animationFrameId = requestAnimationFrame(() => this.update());
     },
