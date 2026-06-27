@@ -30,7 +30,6 @@ window.MenuEngine = {
         };
     },
 
-    // Автоматически закрывает все окна и включает только нужное, убирая кашу в меню
     switchScreen(activeScreenKey) {
         this.initDOMRefs();
         const allScreens = {
@@ -129,7 +128,7 @@ window.MenuEngine = {
         window.Game.currentLevel = lvl; 
         window.Game.isTestingCustom = false; 
         window.Game.isEditorMode = false; 
-        window.Game.isHoldingAction = false; // ЖЕСТКО СКИНУЛИ ДУБЛЬ КЛИКА ПРИ ЗАПУСКЕ УРОВНЯ
+        window.Game.isHoldingAction = false; // Чистим клики при старте
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
         if (window.AudioEngine) window.AudioEngine.initAudio(); 
@@ -139,7 +138,7 @@ window.MenuEngine = {
         this.switchScreen('none');
         window.Game.isEditorMode = false; 
         window.Game.isTestingCustom = true; 
-        window.Game.isHoldingAction = false; // ЖЕСТКО СКИНУЛИ ДУБЛЬ КЛИКА ПРИ ЗАПУСКЕ ТЕСТА
+        window.Game.isHoldingAction = false; // Чистим клики при старте
         window.Game.currentLevel = 'custom'; 
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'block'; 
@@ -232,13 +231,12 @@ document.addEventListener("DOMContentLoaded", () => {
     window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); window.Game.applySkin(); };
     window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; const s = window.Game.SKINS[window.Game.selectedSkinIndex]; window.Game.DOM.cube.style.background = s.bg; window.Game.DOM.cube.textContent = s.text; window.Game.DOM.cube.style.display = 'flex'; };
     
-    // ИЗОЛЯЦИЯ ВВОДА: Кубик слушает прыжки ТОЛЬКО из этого одного центрального блока!
+    // ЕДИНЫЙ ЦЕНТРАЛЬНЫЙ СЛУШАТЕЛЬ КЛАВИАТУРЫ
     window.addEventListener('keydown', (e) => { 
         if (e.code === 'Space') { 
             e.preventDefault(); 
             if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.pressAction(); 
         }
-        // Переключение хитбоксов на английскую H (или русскую Р)
         if (e.code === 'KeyH') { window.Game.showHitboxes = !window.Game.showHitboxes; }
     });
     window.addEventListener('keyup', (e) => { 
@@ -248,9 +246,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } 
     });
     
+    // ИЗОЛЯЦИЯ КЛИКОВ МЫШКИ: Прыгаем только на пустом поле
     window.Game.DOM.container.addEventListener('mousedown', (e) => { 
         if (!window.Game.gameActive || window.Game.isEditorMode) return; 
-        // ЗАПРЕТ ПРЫЖКА ПРИ КЛИКАХ В МЕНЮ: Клик по кнопкам больше не взводит флаг вечного прыжка!
         if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel') || e.target.closest('#mainMenuScreen') || e.target.closest('#gameOverScreen')) return;
         
         window.AudioEngine.initAudio(); 
