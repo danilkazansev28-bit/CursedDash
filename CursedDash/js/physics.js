@@ -59,11 +59,10 @@ window.PhysicsEngine = {
         if (window.Game.currentMode === 'cube') {
             window.Game.cubeVelocityY += window.Game.GRAVITY_CUBE; window.Game.cubeY += window.Game.cubeVelocityY;
             
-            // ЛОВИМ ПРИЗЕМЛЕНИЕ НА ПОЛ: Если кубик падал и коснулся земли (y >= 0)
             if (window.Game.cubeY >= 0) { 
                 if (!window.Game.isGrounded && window.Game.cubeVelocityY > 2) {
                     if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) {
-                        window.EffectsEngine.createLandSmoke(100, 50); // Выпускаем пыль на полу
+                        window.EffectsEngine.createLandSmoke(100, 50); 
                     }
                 }
                 window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; window.Game.rotation = window.Game.targetRotation; 
@@ -86,11 +85,12 @@ window.PhysicsEngine = {
             window.Game.rotation = window.Game.cubeVelocityY * 4;
         }
         
+        // ЖЕСТКИЙ ФИКС ОДНОГО ПУТИ: На живом сервере Vercel пути к картинкам пишутся БЕЗ точек и вложенных CursedDash!
         const liveCube = document.getElementById('cube');
         if (liveCube) {
             liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`;
-            const imgPath = window.Game.currentMode === 'cube' ? './assets/images/cube.png' : './assets/images/ship.png';
-            liveCube.style.backgroundImage = `url('${imgPath}'), url('CursedDash/assets/images/${window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png'}')`;
+            const imgName = window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png';
+            liveCube.style.backgroundImage = `url('/assets/images/${imgName}')`;
             liveCube.style.backgroundSize = 'cover';
             liveCube.style.backgroundColor = 'transparent';
             liveCube.style.boxShadow = 'none';
@@ -120,19 +120,16 @@ window.PhysicsEngine = {
 
         for (let i = window.Game.solidBlocks.length - 1; i >= 0; i--) {
             const b = window.Game.solidBlocks[i]; b.x -= finalMovementSpeed; b.element.style.left = b.x + 'px';
-            b.element.style.backgroundImage = "url('./assets/images/block.png'), url('CursedDash/assets/images/block.png')"; b.element.style.backgroundSize = 'cover'; b.element.style.backgroundColor = 'transparent';
+            b.element.style.backgroundImage = "url('/assets/images/block.png')"; b.element.style.backgroundSize = 'cover'; b.element.style.backgroundColor = 'transparent';
             if (b.x < -50) { b.element.remove(); window.Game.solidBlocks.splice(i, 1); continue; }
             if (cR > b.x && cL < b.x + b.width && cT > b.bottom && cB < b.bottom + b.height) {
                 const overlapY = cB - (b.bottom + b.height);
                 if (window.Game.cubeVelocityY >= 0 && overlapY >= -12) {
-                    
-                    // ЛОВУШКА ПРИЗЕМЛЕНИЯ НА БЛОК: Выпускаем пыль, если кубик жестко упал на блок сверху
                     if (!window.Game.isGrounded && window.Game.cubeVelocityY > 2) {
                         if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) {
                             window.EffectsEngine.createLandSmoke(100, b.bottom + b.height);
                         }
                     }
-                    
                     window.Game.cubeY = 50 - (b.bottom + b.height); window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; standingOnBlock = true; window.Game.rotation = window.Game.targetRotation;
                 } else { if (cR - p > b.x && cL + p < b.x + b.width && window.Game.spawnProtectionFrames === 0) { window.MenuEngine.gameOver(); } }
             }
@@ -154,7 +151,7 @@ window.PhysicsEngine = {
         }
         for (let i = window.Game.portals.length - 1; i >= 0; i--) {
             const prt = window.Game.portals[i]; prt.x -= finalMovementSpeed; prt.element.style.left = prt.x + 'px';
-            prt.element.style.backgroundImage = "url('./assets/images/portal.png'), url('CursedDash/assets/images/portal.png')"; prt.element.style.backgroundSize = 'cover'; prt.element.style.backgroundColor = 'transparent';
+            prt.element.style.backgroundImage = "url('/assets/images/portal.png')"; prt.element.style.backgroundSize = 'cover'; prt.element.style.backgroundColor = 'transparent';
             if (prt.x < -50) { prt.element.remove(); window.Game.portals.splice(i, 1); continue; }
             if (cR > prt.x && cL < prt.x + prt.width && cB < prt.bottom + prt.height && cT > prt.bottom) {
                 window.AudioEngine.playPortalSound(); prt.element.remove(); window.Game.portals.splice(i, 1);
@@ -163,10 +160,10 @@ window.PhysicsEngine = {
                     window.Game.currentMode = 'ship'; if (liveCube) liveCube.style.borderRadius = '50% 10px 10px 50%'; 
                 } else { 
                     window.Game.currentMode = 'cube'; if (liveCube) liveCube.style.borderRadius = '4px'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
-// js/physics.js - Часть 4 из 4
+        
         for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
             const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
-            sp.element.style.backgroundImage = "url('./assets/images/speed.png'), url('CursedDash/assets/images/speed.png')"; sp.element.style.backgroundSize = 'cover'; sp.element.style.backgroundColor = 'transparent';
+            sp.element.style.backgroundImage = "url('/assets/images/speed.png')"; sp.element.style.backgroundSize = 'cover'; sp.element.style.backgroundColor = 'transparent';
             if (sp.x < -50) { sp.element.remove(); window.Game.speedPortals.splice(i, 1); continue; } 
             
             let portalWidth = 25; let portalHeight = 100; 
@@ -182,12 +179,12 @@ window.PhysicsEngine = {
                 sp.element.remove(); window.Game.speedPortals.splice(i, 1);
             } 
         }
-        
+// js/physics.js - Часть 4 из 4
         let insideAnyOrb = false; for (let i = window.Game.orbs.length - 1; i >= 0; i--) { const ob = window.Game.orbs[i]; ob.x -= finalMovementSpeed; ob.element.style.left = ob.x + 'px'; if (ob.x < -50) { ob.element.remove(); window.Game.orbs.splice(i, 1); continue; } if (cR > ob.x && cL < ob.x + ob.width && cB < ob.bottom + ob.height && cT > ob.bottom) { insideAnyOrb = true; window.Game.activeOrbIndex = i; } } window.Game.isInsideOrb = insideAnyOrb; if (!window.Game.isInsideOrb) window.Game.activeOrbIndex = -1;
         
         for (let i = window.Game.spikes.length - 1; i >= 0; i--) { 
             const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; 
-            spike.element.style.backgroundImage = "url('./assets/images/spike.png'), url('CursedDash/assets/images/spike.png')"; spike.element.style.backgroundSize = 'cover'; spike.element.style.backgroundColor = 'transparent';
+            spike.element.style.backgroundImage = "url('/assets/images/spike.png')"; spike.element.style.backgroundSize = 'cover'; spike.element.style.backgroundColor = 'transparent';
             if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } 
             if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } } 
         }
