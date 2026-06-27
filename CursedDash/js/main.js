@@ -20,7 +20,7 @@ window.MenuEngine = {
             restartBtn: document.getElementById('restartBtn'), 
             mainMenuScreen: document.getElementById('mainMenuScreen'), 
             editorPanel: document.getElementById('editorPanel'), 
-            editorLeftPanel: document.getElementById('editorLeftPanel'), // Новая ссылка на левую панель
+            editorLeftPanel: document.getElementById('editorLeftPanel'),
             skinSelectScreen: document.getElementById('skinSelectScreen'), 
             stopTestBtn: document.getElementById('stopTestBtn'), 
             levelsListContainer: document.getElementById('levelsListContainer'), 
@@ -41,15 +41,9 @@ window.MenuEngine = {
 
         for (let key in allScreens) {
             if (allScreens[key]) {
-                if (key === activeScreenKey) {
-                    allScreens[key].style.display = 'flex';
-                } else {
-                    allScreens[key].style.display = 'none';
-                }
+                allScreens[key].style.display = (key === activeScreenKey) ? 'flex' : 'none';
             }
         }
-        
-        // Синхронизируем левую панель редактора с нижней панелью инструментов
         if (window.Game.DOM.editorLeftPanel) {
             window.Game.DOM.editorLeftPanel.style.display = (activeScreenKey === 'editor') ? 'flex' : 'none';
         }
@@ -62,7 +56,7 @@ window.MenuEngine = {
         window.AudioEngine.stopMusic(); 
         if (window.Game.isTestingCustom && window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'none'; 
         window.AudioEngine.playDeathSound(); 
-        if (window.EffectsEngine) window.EffectsEngine.createExplosion(150, 50 - window.Game.cubeY); // Сдвинули взрыв под новый спавн
+        if (window.EffectsEngine) window.EffectsEngine.createExplosion(150, 50 - window.Game.cubeY); 
         
         if (window.Game.isTestingCustom) { 
             if (window.Game.DOM.finalScore) window.Game.DOM.finalScore.textContent = Math.min(100, Math.floor((window.Game.score / window.Game.levelMaxLength) * 100)) + "%"; 
@@ -70,7 +64,6 @@ window.MenuEngine = {
             if (window.Game.DOM.finalScore) window.Game.DOM.finalScore.textContent = Math.floor(window.Game.score) + " очков"; 
         } 
     },
-
 // js/main.js - Часть 2 из 4
     renderSavedLevels() { 
         this.initDOMRefs(); 
@@ -78,7 +71,7 @@ window.MenuEngine = {
         window.Game.DOM.levelsListContainer.innerHTML = ''; 
         const levels = window.EditorEngine.getSavedLevels(); 
         if (levels.length === 0) { 
-            window.Game.DOM.levelsListContainer.innerHTML = '<div style="font-size:12px; color:#55547a; text-align:center; padding:10px;">Нет сохраненных уровней</div>'; 
+            window.Game.DOM.levelsListContainer.innerHTML = '<div style="font-size:12px; color:#55547a; text-align:center; padding:10px;">Нет уровней</div>'; 
             return; 
         } 
         levels.forEach((lvl, idx) => { 
@@ -131,7 +124,7 @@ window.MenuEngine = {
     },
 // js/main.js - Часть 3 из 4
     startGame(lvl) { 
-        this.switchScreen('none'); // Прячем все меню, игра пошла!
+        this.switchScreen('none'); 
         window.Game.currentLevel = lvl; 
         window.Game.isTestingCustom = false; 
         window.Game.isEditorMode = false; 
@@ -166,10 +159,7 @@ window.MenuEngine = {
             window.Game.isEditorMode = false; 
             window.Game.customObjects.forEach(obj => { if(obj.element) obj.element.remove(); }); 
             window.Game.customObjects = []; 
-            
-            // Запускаем автоматический вызов главного меню!
             this.switchScreen('mainMenu');
-            
             this.renderSavedLevels(); 
             window.AudioEngine.stopMusic(); 
             window.Game.gameActive = false; 
@@ -202,25 +192,19 @@ document.addEventListener("DOMContentLoaded", () => {
         for(let img of images) {
             await new Promise(r => {
                 const i = new Image(); i.src = `assets/images/${img}`;
-                i.onload = () => { updateBar(img); r(); }; 
-                i.onerror = () => { updateBar(img + ' (CSS заглушка)'); r(); }; 
+                i.onload = () => { updateBar(img); r(); }; i.onerror = () => { updateBar(img + ' (Заглушка)'); r(); }; 
             });
         }
         for(let track of tracks) {
             await new Promise(async (r) => {
-                let trackLoaded = false;
-                setTimeout(() => { if(!trackLoaded) r(); }, 600);
-                try {
-                    if(window.AudioEngine && window.AudioEngine.loadTrackPromise) {
-                        await window.AudioEngine.loadTrackPromise(track);
-                    }
-                } catch(err) {}
+                let trackLoaded = false; setTimeout(() => { if(!trackLoaded) r(); }, 600);
+                try { if(window.AudioEngine && window.AudioEngine.loadTrackPromise) await window.AudioEngine.loadTrackPromise(track); } catch(err) {}
                 trackLoaded = true; updateBar(track); r();
             });
         }
         setTimeout(() => {
             const ls = document.getElementById('loadingScreen'); if(ls) ls.remove();
-            window.MenuEngine.switchScreen('mainMenu'); // Принудительно открываем только главное меню!
+            window.MenuEngine.switchScreen('mainMenu'); 
         }, 300);
     };
     preloadEverything();
@@ -230,8 +214,8 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('btnPlayLvl2', () => window.MenuEngine.startGame(2));
     bindClick('btnPlayLvl3', () => window.MenuEngine.startGame(3));
     bindClick('btnOpenEditor', () => { window.EditorEngine.openEditor(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; });
-    bindClick('btnOpenSkins', () => window.MenuEngine.switchScreen('skins')); // Фикс кнопки скинов!
-    bindClick('btnCloseSkins', () => window.MenuEngine.switchScreen('mainMenu')); // Выход из скинов!
+    bindClick('btnOpenSkins', () => window.MenuEngine.switchScreen('skins')); 
+    bindClick('btnCloseSkins', () => window.MenuEngine.switchScreen('mainMenu')); 
     bindClick('btnStartTest', () => window.MenuEngine.startCustomTest());
     bindClick('btnSaveLevel', () => window.EditorEngine.saveCustomLevelPrompt());
     bindClick('btnClearLevel', () => window.EditorEngine.clearCustomLevel());
@@ -255,10 +239,24 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('toolFast', () => window.EditorEngine.setTool('speed-fast'));
     bindClick('toolEraser', () => window.EditorEngine.setTool('eraser'));
     
+    // ДОБАВЛЯЕМ КНОПКУ ПЕРЕКЛЮЧЕНИЯ ХИТБОКСОВ ИЗ МЕНЮ СКИНОВ/НАСТРОЕК
+    bindClick('btnToggleHitboxMenu', () => {
+        window.Game.showHitboxes = !window.Game.showHitboxes;
+        alert(window.Game.showHitboxes ? "Хитбоксы включены! (Клавиша H)" : "Хитбоксы выключены!");
+    });
+
     window.Game.toggleSkins = function(show) { window.MenuEngine.switchScreen(show ? 'skins' : 'mainMenu'); };
     window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); window.Game.applySkin(); };
-    window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; const s = window.Game.SKINS[window.Game.selectedSkinIndex]; window.Game.DOM.cube.style.background = s.bg; window.Game.DOM.cube.textContent = s.text; window.Game.DOM.cube.style.display = 'flex'; window.Game.DOM.cube.style.boxShadow = `0 0 15px ${s.bg}`; };
-    window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); window.PhysicsEngine.pressAction(); } });
+    window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; const s = window.Game.SKINS[window.Game.selectedSkinIndex]; window.Game.DOM.cube.style.background = s.bg; window.Game.DOM.cube.textContent = s.text; window.Game.DOM.cube.style.display = 'flex'; };
+    
+    window.addEventListener('keydown', (e) => { 
+        if (e.code === 'Space') { e.preventDefault(); window.PhysicsEngine.pressAction(); }
+        // ГЛОБАЛЬНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ХИТБОКСОВ ПО НАЖАТИЮ "H" ИЛИ "Р"
+        if (e.code === 'KeyH') {
+            window.Game.showHitboxes = !window.Game.showHitboxes;
+            console.log("Отображение хитбоксов:", window.Game.showHitboxes);
+        }
+    });
     window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); window.PhysicsEngine.releaseAction(); } });
     window.addEventListener('mousedown', (e) => { if (window.Game.isEditorMode) return; if (!e.target.closest('#editorPanel') && !e.target.closest('button')) { window.AudioEngine.initAudio(); window.PhysicsEngine.pressAction(); } });
     window.addEventListener('mouseup', () => { if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); });
