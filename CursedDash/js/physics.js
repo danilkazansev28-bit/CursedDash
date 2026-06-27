@@ -58,16 +58,12 @@ window.PhysicsEngine = {
 
         if (window.Game.currentMode === 'cube') {
             window.Game.cubeVelocityY += window.Game.GRAVITY_CUBE; window.Game.cubeY += window.Game.cubeVelocityY;
-            
             if (window.Game.cubeY >= 0) { 
                 if (!window.Game.isGrounded && window.Game.cubeVelocityY > 2) {
-                    if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) {
-                        window.EffectsEngine.createLandSmoke(100, 50); 
-                    }
+                    if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) window.EffectsEngine.createLandSmoke(100, 50); 
                 }
                 window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; window.Game.rotation = window.Game.targetRotation; 
             }
-            
             if (!window.Game.isGrounded && window.Game.rotation < window.Game.targetRotation) { 
                 window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; 
             }
@@ -85,15 +81,12 @@ window.PhysicsEngine = {
             window.Game.rotation = window.Game.cubeVelocityY * 4;
         }
         
-        // ЖЕСТКИЙ ФИКС ОДНОГО ПУТИ: На живом сервере Vercel пути к картинкам пишутся БЕЗ точек и вложенных CursedDash!
         const liveCube = document.getElementById('cube');
         if (liveCube) {
             liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`;
-            const imgName = window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png';
-            liveCube.style.backgroundImage = `url('/assets/images/${imgName}')`;
+            // ФИКС КУБА: Пытаемся накатить текстуру, но оставляем белый базовый цвет, если файла нет!
+            liveCube.style.backgroundImage = `url("/assets/images/${window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png'}")`;
             liveCube.style.backgroundSize = 'cover';
-            liveCube.style.backgroundColor = 'transparent';
-            liveCube.style.boxShadow = 'none';
         }
         
         let activeBaseSpeed = window.Game.LEVEL_DATA[window.Game.currentLevel] ? window.Game.LEVEL_DATA[window.Game.currentLevel].speed : 5.5;
@@ -120,16 +113,13 @@ window.PhysicsEngine = {
 
         for (let i = window.Game.solidBlocks.length - 1; i >= 0; i--) {
             const b = window.Game.solidBlocks[i]; b.x -= finalMovementSpeed; b.element.style.left = b.x + 'px';
-            b.element.style.backgroundImage = "url('/assets/images/block.png')"; b.element.style.backgroundSize = 'cover'; b.element.style.backgroundColor = 'transparent';
+            // ФИКС БЛОКОВ: Даем CSS свободно рисовать базовую фигуру, если PNG нет в помине
+            b.element.style.backgroundImage = "url('/assets/images/block.png')"; b.element.style.backgroundSize = 'cover';
             if (b.x < -50) { b.element.remove(); window.Game.solidBlocks.splice(i, 1); continue; }
             if (cR > b.x && cL < b.x + b.width && cT > b.bottom && cB < b.bottom + b.height) {
                 const overlapY = cB - (b.bottom + b.height);
                 if (window.Game.cubeVelocityY >= 0 && overlapY >= -12) {
-                    if (!window.Game.isGrounded && window.Game.cubeVelocityY > 2) {
-                        if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) {
-                            window.EffectsEngine.createLandSmoke(100, b.bottom + b.height);
-                        }
-                    }
+                    if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) window.EffectsEngine.createLandSmoke(100, b.bottom + b.height);
                     window.Game.cubeY = 50 - (b.bottom + b.height); window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; standingOnBlock = true; window.Game.rotation = window.Game.targetRotation;
                 } else { if (cR - p > b.x && cL + p < b.x + b.width && window.Game.spawnProtectionFrames === 0) { window.MenuEngine.gameOver(); } }
             }
@@ -145,13 +135,12 @@ window.PhysicsEngine = {
                 if (pd.type === 'pad-red') bouncePower = window.Game.JUMP_CUBE * 1.6;
                 window.Game.cubeVelocityY = bouncePower; window.Game.isGrounded = false;
                 window.Game.targetRotation += 180; window.Game.rotationSpeed = 180 / Math.abs((2 * bouncePower) / window.Game.GRAVITY_CUBE);
-                window.AudioEngine.playPortalSound();
-                window.Game.padCooldown = 15; 
+                window.AudioEngine.playPortalSound(); window.Game.padCooldown = 15; 
             }
         }
         for (let i = window.Game.portals.length - 1; i >= 0; i--) {
             const prt = window.Game.portals[i]; prt.x -= finalMovementSpeed; prt.element.style.left = prt.x + 'px';
-            prt.element.style.backgroundImage = "url('/assets/images/portal.png')"; prt.element.style.backgroundSize = 'cover'; prt.element.style.backgroundColor = 'transparent';
+            prt.element.style.backgroundImage = "url('/assets/images/portal.png')"; prt.element.style.backgroundSize = 'cover';
             if (prt.x < -50) { prt.element.remove(); window.Game.portals.splice(i, 1); continue; }
             if (cR > prt.x && cL < prt.x + prt.width && cB < prt.bottom + prt.height && cT > prt.bottom) {
                 window.AudioEngine.playPortalSound(); prt.element.remove(); window.Game.portals.splice(i, 1);
@@ -163,14 +152,12 @@ window.PhysicsEngine = {
         
         for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
             const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
-            sp.element.style.backgroundImage = "url('/assets/images/speed.png')"; sp.element.style.backgroundSize = 'cover'; sp.element.style.backgroundColor = 'transparent';
+            sp.element.style.backgroundImage = "url('/assets/images/speed.png')"; sp.element.style.backgroundSize = 'cover';
             if (sp.x < -50) { sp.element.remove(); window.Game.speedPortals.splice(i, 1); continue; } 
-            
             let portalWidth = 25; let portalHeight = 100; 
             let portalBottom = parseInt(sp.element.style.bottom || sp.bottom || 50, 10); let portalTop = portalBottom + portalHeight;
             let isCollidingX = (cR >= sp.x && cL <= sp.x + portalWidth) || (cR + finalMovementSpeed >= sp.x && cL - finalMovementSpeed <= sp.x + portalWidth);
             let isCollidingY = (cT >= portalBottom && cB <= portalTop);
-
             if (isCollidingX && isCollidingY) { 
                 window.AudioEngine.playPortalSound(); 
                 if (sp.type.includes('slow')) window.Game.currentSpeedMultiplier = 0.65;
@@ -184,7 +171,8 @@ window.PhysicsEngine = {
         
         for (let i = window.Game.spikes.length - 1; i >= 0; i--) { 
             const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; 
-            spike.element.style.backgroundImage = "url('/assets/images/spike.png')"; spike.element.style.backgroundSize = 'cover'; spike.element.style.backgroundColor = 'transparent';
+            // ЖЕСТКИЙ ФИКС ШИПОВ: Убрали прозрачность бэкграунда, позволяя CSS перекрасить рамку в белый квадрат!
+            spike.element.style.backgroundImage = "url('/assets/images/spike.png')"; spike.element.style.backgroundSize = 'cover';
             if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } 
             if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } } 
         }
@@ -209,10 +197,10 @@ window.PhysicsEngine = {
                 let maxTargetX = 800; window.Game.customObjects.forEach(obj => { if (obj.x > maxTargetX) maxTargetX = obj.x; }); window.Game.levelMaxLength = maxTargetX + 200;
                 window.Game.customObjects.forEach(obj => { 
                     const elClone = obj.element.cloneNode(true); elClone.style.display = 'block'; elClone.style.left = obj.x + 'px'; liveObjLayer.appendChild(elClone); 
-                    if (obj.type === 'solid-block') window.Game.solidBlocks.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) });
-                    else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') window.Game.spikes.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); 
-                    else if (obj.type === 'portal') window.Game.portals.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); 
-                    else if (obj.type.startsWith('speed-')) window.Game.speedPortals.push({ element: elClone, x: parseInt(obj.x, 10), type: obj.type, width: 25, height: 100, bottom: parseInt(obj.bottom, 10) }); 
+                    if (obj.type === 'solid-block') { elClone.style.backgroundImage = "url('/assets/images/block.png')"; elClone.style.backgroundSize = 'cover'; window.Game.solidBlocks.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); }
+                    else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') { elClone.style.backgroundImage = "url('/assets/images/spike.png')"; elClone.style.backgroundSize = 'cover'; window.Game.spikes.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); } 
+                    else if (obj.type === 'portal') { elClone.style.backgroundImage = "url('/assets/images/portal.png')"; elClone.style.backgroundSize = 'cover'; window.Game.portals.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); } 
+                    else if (obj.type.startsWith('speed-')) { elClone.style.backgroundImage = "url('/assets/images/speed.png')"; elClone.style.backgroundSize = 'cover'; window.Game.speedPortals.push({ element: elClone, x: parseInt(obj.x, 10), type: obj.type, width: 25, height: 100, bottom: parseInt(obj.bottom, 10) }); } 
                     else if (obj.type.startsWith('orb-')) window.Game.orbs.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 30, height: 30, bottom: parseInt(obj.bottom, 10) }); 
                     else if (obj.type.startsWith('pad-')) window.Game.pads.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 34, height: 12, bottom: parseInt(obj.bottom, 10) }); 
                 }); 
