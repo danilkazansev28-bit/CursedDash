@@ -69,7 +69,7 @@ window.MenuEngine = {
         if (!window.Game.DOM.levelsListContainer) return; 
         window.Game.DOM.levelsListContainer.innerHTML = ''; 
         
-        // Заголовок кастомных карт теперь виден ВСЕМ игрокам без исключения!
+        // Показываем список кастомных карт ВСЕМ игрокам!
         const title = document.getElementById('customLevelsTitle');
         if (title) title.style.display = 'block';
 
@@ -183,17 +183,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const gameBox = document.getElementById('gameContainer');
     if (gameBox && !document.getElementById('loadingScreen')) {
         const loadScreen = document.createElement('div'); loadScreen.id = 'loadingScreen';
-        loadScreen.innerHTML = `<div class="loader-title">CURSED DASH</div><div class="loader-bar"><div id="loaderFill"></div></div><div id="loaderText">Загрузка ресурсов...</div>`;
+        loadScreen.innerHTML = `<div class="loader-title">CURSED DASH</div><div class="loader-bar"><div id="loaderFill"></div></div><div id="loaderText">Загрузка движка...</div>`;
         gameBox.appendChild(loadScreen);
     }
 
     window.MenuEngine.initDOMRefs(); window.EditorEngine.initEditorEvents(); window.MenuEngine.renderSavedLevels();
     
-    // ОТКРЫВАЕМ РЕДАКТОР ДЛЯ ВСЕХ: Любой зашедший игрок видит кнопку захода в конструктор уровней!
+    // Кнопка редактора ВСЕГДА открыта для всех игроков
     const editorBtn = document.getElementById('btnOpenEditor'); if (editorBtn) editorBtn.style.display = 'block';
-    const title = document.getElementById('customLevelsTitle'); if (title) title.style.display = 'block';
 
-    // СЕКРЕТ АДМИНА: Кнопка «ВЫЛОЖИТЬ ОФИЦИАЛЬНЫЙ» откроется только тебе по хвосту в адресе
+    // ЗОЛОТАЯ КНОПКА «ВЫЛОЖИТЬ»: Проверяем, зашел ли именно Создатель с ?admin=mysecret123
     const urlParams = new URLSearchParams(window.location.search);
     const publishBtn = document.getElementById('btnPublishOfficial'); 
     if (publishBtn) {
