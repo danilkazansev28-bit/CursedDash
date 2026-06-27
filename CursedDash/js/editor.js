@@ -32,19 +32,14 @@ if (!window.EditorEngine) {
                 btnNext.addEventListener('click', (e) => { e.stopPropagation(); window.Game.selectedTrackIndex = (window.Game.selectedTrackIndex + 1) % window.Game.MUSIC_TRACKS.length; updateTrackLabel(); });
 
                 sliderContainer.appendChild(btnPrev); sliderContainer.appendChild(trackNameLabel); sliderContainer.appendChild(btnNext);
-                if (window.Game.DOM.customTrackSelect) window.Game.DOM.customTrackSelect.style.display = 'none';
-
-                // ПРИВЯЗЫВАЕМ СЛАЙДЕР В ЛЕВУЮ ЧАСТЬ ЭКРАНА ПОД КНОПКИ
                 const leftPanel = document.getElementById('editorLeftPanel');
                 if (leftPanel) { leftPanel.appendChild(sliderContainer); }
-                
                 updateTrackLabel();
             } else {
                 const label = document.getElementById('editorMusicTrackName'); if (label) label.textContent = window.Game.MUSIC_TRACKS[window.Game.selectedTrackIndex].name;
             }
             this.updateEditorView(); 
         },
-
 // js/editor.js - Часть 2 из 4
         updateEditorView() { 
             window.Game.customObjects.forEach(obj => { 
@@ -69,19 +64,30 @@ if (!window.EditorEngine) {
         },
 // js/editor.js - Часть 3 из 4
         saveCustomLevelPrompt() { 
-            if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой уровень!"); return; } 
-            const name = prompt("Введите название уровня:", "Мой уровень " + (this.getSavedLevels().length + 1)); 
+            if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой черновик!"); return; } 
+            const name = prompt("Введите название черновика:", "Мой набросок " + (this.getSavedLevels().length + 1)); 
             if (!name) return; 
             const levels = this.getSavedLevels();
             const dataToSave = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height })); 
             levels.push({ name: name, objects: dataToSave, selectedTrackIndex: window.Game.selectedTrackIndex }); 
             localStorage.setItem('gd_custom_levels', JSON.stringify(levels)); 
             window.MenuEngine.renderSavedLevels(); 
-            alert("Уровень сохранен!"); 
+            alert("Черновик сохранен!"); 
         },
         getSavedLevels() { const data = localStorage.getItem('gd_custom_levels'); return data ? JSON.parse(data) : []; },
         clearCustomLevel() { window.Game.customObjects.forEach(obj => { if(obj.element) obj.element.remove(); }); window.Game.customObjects = []; },
 // js/editor.js - Часть 4 из 4
+        // ФУНКЦИЯ ВЫКЛАДЫВАНИЯ ОФИЦИАЛЬНОГО УРОВНЯ ДЛЯ ИГРОКОВ
+        publishOfficialLevel() {
+            if (window.Game.customObjects.length === 0) { alert("Нельзя выложить пустой уровень!"); return; }
+            const lvlNum = prompt("На место какого уровня выложить карту? (Введите число 1, 2 или 3):", "1");
+            if (lvlNum !== "1" && lvlNum !== "2" && lvlNum !== "3") { alert("Неверный номер уровня!"); return; }
+            
+            const dataToPublish = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height }));
+            localStorage.setItem(`gd_official_level_${lvlNum}`, JSON.stringify(dataToPublish));
+            alert(`Уровень успешно ОПУБЛИКОВАН на место Официального Уровня ${lvlNum}! Теперь все игроки будут проходить его.`);
+        },
+
         initEditorEvents() {
             window.MenuEngine.initDOMRefs();
             if (window.Game.DOM.editorPanel) {
@@ -92,17 +98,18 @@ if (!window.EditorEngine) {
             if(scrLeft) scrLeft.addEventListener('click', () => { window.Game.editorScrollX = Math.max(0, window.Game.editorScrollX - 120); this.updateEditorView(); });
             if(scrRight) scrRight.addEventListener('click', () => { window.Game.editorScrollX += 120; this.updateEditorView(); });
             
+            const pubBtn = document.getElementById('btnPublishOfficial');
+            if (pubBtn) pubBtn.addEventListener('click', () => this.publishOfficialLevel());
+
             window.Game.DOM.container.addEventListener('mousedown', (e) => {
                 if (e.target && (e.target.closest('#musicSliderContainer') || e.target.id === 'editorMusicTrackName')) return;
                 e.preventDefault(); 
-                if (!window.Game.isEditorMode || window.Game.isMouseOverPanel || e.target === window.Game.DOM.stopTestBtn || e.target.closest('#editorPanel')) return;
+                if (!window.Game.isEditorMode || window.Game.isMouseOverPanel || e.target === window.Game.DOM.stopTestBtn || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel')) return;
                 
                 const rect = window.Game.DOM.container.getBoundingClientRect(); 
                 let clickX = e.clientX - rect.left, clickY = e.clientY - rect.top, globalX = clickX + window.Game.editorScrollX;
                 let snapX = parseInt(Math.floor(globalX / 40) * 40, 10); let snapY = parseInt(Math.floor((400 - clickY) / 40) * 40, 10);
                 
-                if (window.Game.currentMode === 'cube' && snapY === 0) snapY = 0;
-
                 if (window.Game.currentTool === 'eraser') { 
                     for (let i = window.Game.customObjects.length - 1; i >= 0; i--) { 
                         const obj = window.Game.customObjects[i]; 
@@ -118,7 +125,6 @@ if (!window.EditorEngine) {
                 else if (type.startsWith('pad-')) { width = 34; height = 12; newEl.className = `pad ${type}`; } 
                 else if (type.startsWith('speed-')) { width = 25; height = 100; newEl.className = `speed-portal ${type}`; } 
                 else if (type === 'solid-block') { newEl.classList.add('solid-block'); } 
-                // СУПЕР-ФИКС РЕДАКТОРА: Меняем ширину шипов на 40px, делая их квадратными 40x40!
                 else if (type === 'spike-ceil') { width = 40; height = 40; newEl.classList.add('spike'); newEl.style.transform = 'rotate(180deg)'; } 
                 else if (type === 'spike-floor') { width = 40; height = 40; newEl.classList.add('spike'); }
                 
