@@ -21,11 +21,11 @@
                 <button class="menu-btn" id="btnPlayLvl3">Уровень 3</button>
             </div>
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <!-- Кнопка редактора теперь будет скрыта от обычных игроков и видна только админу -->
-                <button class="menu-btn" id="btnOpenEditor" style="background: #00ff88; color: #111; display: none;">Редактор Создателя</button>
+                <!-- Кнопка теперь ВСЕГДА открыта для всех игроков -->
+                <button class="menu-btn" id="btnOpenEditor" style="background: #00ff88; color: #111;">Редактор уровней</button>
                 <button class="menu-btn" id="btnOpenSkins" style="background: #00bfff; color: #111;">Облик куба</button>
             </div>
-            <div id="customLevelsTitle" style="color: #fff; font-size: 14px; font-weight: bold; margin-bottom: 10px; display: none;">ВАШИ ЧЕРНОВИКИ:</div>
+            <div id="customLevelsTitle" style="color: #fff; font-size: 14px; font-weight: bold; margin-bottom: 10px;">ВАШИ КАСТОМНЫЕ УРОВНИ:</div>
             <div id="levelsListContainer" style="width: 80%; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: 5px;"></div>
         </div>
 <!-- index.html - Часть 2 из 2 -->
@@ -64,9 +64,10 @@
             <button class="side-btn" id="btnEditorExit" style="background: #e94560;">В меню</button>
             <div class="side-divider"></div>
             <button class="side-btn" id="btnStartTest" style="background: #00ff88; color: #111;">ТЕСТ</button>
-            <button class="side-btn" id="btnSaveLevel" style="background: #00bfff; color: #111;">СОХР</button>
-            <!-- СЕКРЕТНАЯ КНОПКА: Видна только создателю по паролю в URL -->
-            <button class="side-btn" id="btnPublishOfficial" style="background: #ffaa00; color: #111; display: none; font-size: 9px; box-shadow: 0 0 10px #ffaa00;">ВЫЛОЖИТЬ</button>
+            <!-- Эта кнопка СОХРАНИТЬ доступна ВСЕМ игрокам во всех версиях -->
+            <button class="side-btn" id="btnSaveLevel" style="background: #00bfff; color: #111;">СОХРАНИТЬ</button>
+            <!-- СЕКРЕТНАЯ ЗОЛОТАЯ КНОПКА: Появится ДОПОЛНИТЕЛЬНО только тебе по паролю admin=mysecret123 -->
+            <button class="side-btn" id="btnPublishOfficial" style="background: #ffaa00; color: #111; display: none; font-size: 9px; box-shadow: 0 0 10px #ffaa00; border: 2px solid #fff;">ВЫЛОЖИТЬ</button>
             <button class="side-btn" id="btnClearLevel" style="background: #555;">ОЧИСТКА</button>
             <div class="side-divider"></div>
             <div id="musicSliderPlaceholder"></div>
