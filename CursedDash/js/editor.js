@@ -10,6 +10,28 @@ if (!window.EditorEngine) {
             window.Game.isEditorMode = true; 
             window.Game.isMouseOverPanel = false; 
             window.PhysicsEngine.clearGameContainer(); 
+            
+            // Динамически добавляем красивое текстовое поле для ввода MP3 ссылки в панель редактора, если его еще нет
+            if (!document.getElementById('customMp3UrlInput')) {
+                const inputEl = document.createElement('input');
+                inputEl.id = 'customMp3UrlInput';
+                inputEl.type = 'text';
+                inputEl.placeholder = 'Вставь MP3-ссылку...';
+                inputEl.style.cssText = 'background:#222; color:#fff; border:1px solid #555; padding:4px; font-size:10px; width:130px; margin:0 4px; border-radius:3px;';
+                
+                // Вставляем перед кнопкой "Тест"
+                const testBtn = document.getElementById('btnStartTest');
+                if (testBtn && testBtn.parentNode) {
+                    testBtn.parentNode.insertBefore(inputEl, testBtn);
+                }
+            }
+            
+            // Если у текущего уровня уже есть ссылка, заполняем её в поле
+            const inputField = document.getElementById('customMp3UrlInput');
+            if (inputField) {
+                inputField.value = window.Game.currentCustomMp3Url || '';
+            }
+
             this.updateEditorView(); 
         },
         updateEditorView() { 
@@ -31,6 +53,25 @@ if (!window.EditorEngine) {
             };
             if(toolsMap[tool]) document.getElementById(toolsMap[tool]).classList.add('active');
         },
+        saveCustomLevelPrompt() { 
+            if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой уровень!"); return; } 
+            const name = prompt("Введите название уровня:", "Мой уровень " + (this.getSavedLevels().length + 1)); 
+            if (!name) return; 
+            
+            // Запоминаем то, что пользователь ввёл в текстовое поле
+            const inputField = document.getElementById('customMp3UrlInput');
+            const mp3Url = inputField ? inputField.value.trim() : '';
+            window.Game.currentCustomMp3Url = mp3Url;
+
+            const levels = this.getSavedLevels();
+            const dataToSave = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height })); 
+            
+            // Сохраняем ссылку на MP3 в общую память браузера рядом с объектами!
+            levels.push({ name: name, objects: dataToSave, track: window.Game.selectedTrack, customMp3Url: mp3Url }); 
+            localStorage.setItem('gd_custom_levels', JSON.stringify(levels)); 
+            window.MenuEngine.renderSavedLevels(); 
+            alert("Уровень сохранен вместе с кастомной музыкой!"); 
+        },
 // js/editor.js - Часть 2 из 2
         initEditorEvents() {
             window.MenuEngine.initDOMRefs();
@@ -43,7 +84,7 @@ if (!window.EditorEngine) {
             
             window.Game.DOM.container.addEventListener('mousedown', (e) => {
                 e.preventDefault(); 
-                if (!window.Game.isEditorMode || window.Game.isMouseOverPanel || e.target === window.Game.DOM.stopTestBtn || e.target === window.Game.DOM.customTrackSelect || e.target.closest('#editorPanel')) return;
+                if (!window.Game.isEditorMode || window.Game.isMouseOverPanel || e.target === window.Game.DOM.stopTestBtn || e.target === window.Game.DOM.customTrackSelect || e.target.id === 'customMp3UrlInput' || e.target.closest('#editorPanel')) return;
                 
                 const rect = window.Game.DOM.container.getBoundingClientRect(); 
                 let clickX = e.clientX - rect.left, clickY = e.clientY - rect.top, globalX = clickX + window.Game.editorScrollX;
@@ -77,17 +118,11 @@ if (!window.EditorEngine) {
                 
                 window.Game.customObjects.push({ element: newEl, type: type, x: snapX, bottom: snapY, width: parseInt(width, 10), height: parseInt(height, 10) });
             });
-            window.Game.DOM.customTrackSelect.addEventListener('change', (e) => { window.Game.selectedTrack = e.target.value; if (window.Game.gameActive) window.AudioEngine.startMusic(); });
-        },
-        saveCustomLevelPrompt() { 
-            if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой уровень!"); return; } 
-            const name = prompt("Введите название уровня:", "Мой уровень " + (this.getSavedLevels().length + 1)); 
-            if (!name) return; 
-            const levels = this.getSavedLevels(), dataToSave = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height })); 
-            levels.push({ name: name, objects: dataToSave, track: window.Game.selectedTrack }); 
-            localStorage.setItem('gd_custom_levels', JSON.stringify(levels)); 
-            window.MenuEngine.renderSavedLevels(); 
-            alert("Сохранено!"); 
+            
+            window.Game.DOM.customTrackSelect.addEventListener('change', (e) => { 
+                window.Game.selectedTrack = e.target.value; 
+                if (window.Game.gameActive) window.AudioEngine.startMusic(); 
+            });
         },
         getSavedLevels() { const data = localStorage.getItem('gd_custom_levels'); return data ? JSON.parse(data) : []; },
         clearCustomLevel() { window.Game.customObjects.forEach(obj => obj.element.remove()); window.Game.customObjects = []; }
