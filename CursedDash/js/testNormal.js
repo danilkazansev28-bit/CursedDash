@@ -26,12 +26,11 @@ if (!window.NormalLevelEngine) {
             const liveObjLayer = document.getElementById('objectsLayer');
             if (!liveObjLayer) return;
 
-            // В самый первый микрокадр запуска проверяем, выкладывал ли Создатель эту карту на наш "сервер"
             if (currentX < 10) { 
                 this.spawnedX = {}; 
                 const savedData = localStorage.getItem(`gd_official_level_${lvl}`);
                 
-                if (savedData) {
+                if (savedData && savedData !== "[]" && savedData !== "") {
                     const parsed = JSON.parse(savedData);
                     this.activePublishedMap = {};
                     let maxTargetX = 800;
@@ -39,15 +38,14 @@ if (!window.NormalLevelEngine) {
                         this.activePublishedMap[parseInt(o.x, 10)] = o;
                         if (o.x > maxTargetX) maxTargetX = o.x;
                     });
-                    // Фиксируем длину уровня по последнему поставленному тобой шипу
                     window.Game.levelMaxLength = maxTargetX + 400;
                 } else {
-                    // СУПЕР-ФИКС: Если уровня на сервере еще нет — останавливаем игру и выдаем предупреждение!
+                    // ЕСЛИ УРОВНЯ НЕТ НА НАШЕМ "СЕРВЕРЕ" — МГНОВЕННЫЙ СТОП И ВЫХОД В МЕНЮ!
                     window.Game.gameActive = false;
                     if (window.AudioEngine) window.AudioEngine.stopMusic();
                     if (window.PhysicsEngine && window.PhysicsEngine.clearGameContainer) window.PhysicsEngine.clearGameContainer();
                     
-                    alert(`ОШИБКА СЕРВЕРА: Официальный Уровень ${lvl} еще не выложен Создателем игры! Зайдите в редактор и опубликуйте карту.`);
+                    alert(`ОШИБКА: Официальный Уровень ${lvl} еще не выложен Создателем игры! Зайдите в редактор под своим паролем и опубликуйте карту.`);
                     window.MenuEngine.backToMenu();
                     return;
                 }
@@ -56,7 +54,6 @@ if (!window.NormalLevelEngine) {
             let targetCheckX = currentX + 850;
             let snapCheckX = Math.floor(targetCheckX / 40) * 40; 
 
-            // Безопасный спавн объектов из твоей сохраненной серверной карты
             if (this.activePublishedMap && this.activePublishedMap[snapCheckX] && !this.spawnedX[snapCheckX]) {
                 const o = this.activePublishedMap[snapCheckX];
                 this.spawnedX[snapCheckX] = true;
