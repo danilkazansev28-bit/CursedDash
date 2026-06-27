@@ -1,7 +1,7 @@
 // js/state.js
 if (!window.Game) window.Game = {};
 
-window.Game.GRAVITY_CUBE = 0.6; 
+window.Game.GRAVITY_CUBE = 0.4; 
 window.Game.JUMP_CUBE = -11;
 window.Game.GRAVITY_SHIP = 0.25; 
 window.Game.THRUST_SHIP = -0.5; 
