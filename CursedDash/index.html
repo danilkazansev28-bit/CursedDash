@@ -5,7 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geometry Dash Sandbox</title>
-    <link rel="stylesheet" href="./css/style.css">
+    <!-- Автоматический сброс кэша стилей при каждой загрузке страницы -->
+    <script>
+        const styleLink = document.createElement('link');
+        styleLink.rel = 'stylesheet';
+        styleLink.href = './css/style.css?v=' + Date.now();
+        document.head.appendChild(styleLink);
+    </script>
 </head>
 <body>
     <div id="gameContainer">
@@ -21,7 +27,6 @@
                 <button class="menu-btn" id="btnPlayLvl3">Уровень 3</button>
             </div>
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <!-- Кнопка теперь ВСЕГДА открыта для всех игроков -->
                 <button class="menu-btn" id="btnOpenEditor" style="background: #00ff88; color: #111;">Редактор уровней</button>
                 <button class="menu-btn" id="btnOpenSkins" style="background: #00bfff; color: #111;">Облик куба</button>
             </div>
@@ -64,9 +69,7 @@
             <button class="side-btn" id="btnEditorExit" style="background: #e94560;">В меню</button>
             <div class="side-divider"></div>
             <button class="side-btn" id="btnStartTest" style="background: #00ff88; color: #111;">ТЕСТ</button>
-            <!-- Эта кнопка СОХРАНИТЬ доступна ВСЕМ игрокам во всех версиях -->
             <button class="side-btn" id="btnSaveLevel" style="background: #00bfff; color: #111;">СОХРАНИТЬ</button>
-            <!-- СЕКРЕТНАЯ ЗОЛОТАЯ КНОПКА: Появится ДОПОЛНИТЕЛЬНО только тебе по паролю admin=mysecret123 -->
             <button class="side-btn" id="btnPublishOfficial" style="background: #ffaa00; color: #111; display: none; font-size: 9px; box-shadow: 0 0 10px #ffaa00; border: 2px solid #fff;">ВЫЛОЖИТЬ</button>
             <button class="side-btn" id="btnClearLevel" style="background: #555;">ОЧИСТКА</button>
             <div class="side-divider"></div>
@@ -95,6 +98,12 @@
         </div>
     </div>
 
-    <script type="module" src="./js/main.js"></script>
+    <!-- ВЕЧНЫЙ АВТОМАТИЧЕСКИЙ СБРОС КЭША: Генерирует уникальный ID при каждом запуске! -->
+    <script>
+        const mainScript = document.createElement('script');
+        mainScript.type = 'module';
+        mainScript.src = './js/main.js?v=' + Date.now();
+        document.body.appendChild(mainScript);
+    </script>
 </body>
 </html>
