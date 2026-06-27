@@ -25,7 +25,7 @@ window.PhysicsEngine = {
             return;
         }
         
-        // ЖЕЛЕЗНЫЙ ФИКС ПРЫЖКА: Прыгаем строго один раз только если железно стоим на земле!
+        // Одиночное нажатие: прыгаем только если жестко стоим на земле
         if (window.Game.currentMode === 'cube' && window.Game.isGrounded) { 
             window.Game.cubeVelocityY = window.Game.JUMP_CUBE; 
             window.Game.isGrounded = false; 
@@ -41,15 +41,11 @@ window.PhysicsEngine = {
         return (u >= 0) && (v >= 0) && (u + v <= 1);
     },
     checkTriangleCollision(cL, cR, cB, cT, s) {
-        const shrinkX = 4; 
-        const shrinkY = 4; 
-        
+        const shrinkX = 4; const shrinkY = 4; 
         let ax = s.x + shrinkX; let ay = s.bottom; 
         let bx = s.x + s.width - shrinkX; let by = s.bottom; 
         let cx = s.x + s.width / 2; let cy = s.bottom + s.height - shrinkY;
-        
         if(s.type === 'spike-ceil') { ay = s.bottom + s.height; by = s.bottom + s.height; cy = s.bottom + shrinkY; }
-        
         let points = [{x:cL+2, y:cB+2}, {x:cR-2, y:cB+2}, {x:cL+2, y:cT-2}, {x:cR-2, y:cT-2}, {x:cL+20, y:cB+20}];
         for(let p of points) { if(this.isPointInTriangle(p.x, p.y, ax, ay, bx, by, cx, cy)) return true; }
         return false;
@@ -57,7 +53,6 @@ window.PhysicsEngine = {
     drawHitboxDebug(el, type, width, height, customStyle = '') {
         let debugDiv = el.querySelector('.debug-hitbox');
         if (!debugDiv) { debugDiv = document.createElement('div'); debugDiv.className = 'debug-hitbox'; el.appendChild(debugDiv); }
-        // Если хитбоксы отключены кнопкой H, мгновенно прячем рамки, чтобы они не мешали играть
         if (!window.Game.showHitboxes) { debugDiv.style.display = 'none'; return; }
         debugDiv.style.cssText = `position:absolute; left:0; bottom:0; width:${width}px; height:${height}px; pointer-events:none; border:2px solid ${type === 'player' ? '#00ff88' : '#ff0055'}; background:${type === 'player' ? 'rgba(0,255,136,0.15)' : 'rgba(255,0,85,0.15)'}; z-index:9999; box-sizing:border-box; display:block; ${customStyle}`;
     },
@@ -70,14 +65,20 @@ window.PhysicsEngine = {
         if (window.Game.currentMode === 'cube') {
             window.Game.cubeVelocityY += window.Game.GRAVITY_CUBE; window.Game.cubeY += window.Game.cubeVelocityY;
             
-            // СТАБИЛИЗАЦИЯ ПОЛА: Обнуляем скорость и жестко фиксируем статус заземления grounded
             if (window.Game.cubeY >= 0) { 
                 window.Game.cubeY = 0; 
                 window.Game.cubeVelocityY = 0; 
                 window.Game.isGrounded = true; 
                 window.Game.rotation = window.Game.targetRotation; 
+
+                // КРАСИВЫЙ ФИКС ЗАЖАТИЯ ДЛЯ КУБА: Если игрок держит палец/Пробел В МОМЕНТ КАСАНИЯ ПОЛА — прыгаем!
+                if (window.Game.isHoldingAction) {
+                    window.Game.cubeVelocityY = window.Game.JUMP_CUBE; 
+                    window.Game.isGrounded = false; 
+                    window.Game.targetRotation += 180; 
+                    window.Game.rotationSpeed = 180 / Math.abs((2 * window.Game.JUMP_CUBE) / window.Game.GRAVITY_CUBE); 
+                }
             } else {
-                // Если кубик находится в воздухе, он точно НЕ на земле
                 window.Game.isGrounded = false;
             }
             
@@ -95,18 +96,12 @@ window.PhysicsEngine = {
         
         const liveCube = document.getElementById('cube');
         if (liveCube) {
-            // Контейнер хитбокса скользит ровно по Y
             liveCube.style.transform = `translateY(${window.Game.cubeY}px)`;
             liveCube.style.backgroundImage = `url("/assets/images/${window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png'}")`;
             
-            // Вращаем только внутреннюю визуальную часть, чтобы не ломать триггеры коллизий
             let debugDiv = liveCube.querySelector('.debug-hitbox');
-            if (debugDiv && window.Game.showHitboxes) {
-                debugDiv.style.transform = `rotate(${window.Game.rotation}deg)`;
-            } else {
-                liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`;
-            }
-
+            if (debugDiv && window.Game.showHitboxes) { debugDiv.style.transform = `rotate(${window.Game.rotation}deg)`; } 
+            else { liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`; }
             this.drawHitboxDebug(liveCube, 'player', 40, 40);
         }
         
@@ -138,12 +133,22 @@ window.PhysicsEngine = {
             if (cR > b.x && cL < b.x + b.width && cT > b.bottom && cB < b.bottom + b.height) {
                 const overlapY = cB - (b.bottom + b.height);
                 if (window.Game.cubeVelocityY >= 0 && overlapY >= -12) {
-                    if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) window.EffectsEngine.createLandSmoke(100, b.bottom + b.height);
-                    window.Game.cubeY = 50 - (b.bottom + b.height); window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; standingOnBlock = true; window.Game.rotation = window.Game.targetRotation;
+                    window.Game.cubeY = 50 - (b.bottom + b.height); 
+                    window.Game.cubeVelocityY = 0; 
+                    window.Game.isGrounded = true; 
+                    standingOnBlock = true; 
+                    window.Game.rotation = window.Game.targetRotation;
+
+                    // КРАСИВЫЙ ФИКС ЗАЖАТИЯ НА БЛОКАХ: Автоматический прыжок при приземлении на блок сверху с зажатой клавишей!
+                    if (window.Game.isHoldingAction && window.Game.currentMode === 'cube') {
+                        window.Game.cubeVelocityY = window.Game.JUMP_CUBE; 
+                        window.Game.isGrounded = false; 
+                        window.Game.targetRotation += 180; 
+                        window.Game.rotationSpeed = 180 / Math.abs((2 * window.Game.JUMP_CUBE) / window.Game.GRAVITY_CUBE); 
+                    }
                 } else { if (cR - p > b.x && cL + p < b.x + b.width && window.Game.spawnProtectionFrames === 0) { window.MenuEngine.gameOver(); } }
             }
         }
-        // Если кубик не стоит на твердом блоке и находится выше уровня пола — отключаем grounded
         if (!standingOnBlock && window.Game.cubeY < 0) { window.Game.isGrounded = false; }
         if (window.Game.cubeY === 0) { window.Game.isGrounded = true; }
 
@@ -194,7 +199,6 @@ window.PhysicsEngine = {
                 if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } 
             } 
         }
-        // Если отображение хитбоксов выключено клавишей H, принудительно зачищаем все старые дебаг-рамки со сцены
         if (!window.Game.showHitboxes) { document.querySelectorAll('.debug-hitbox').forEach(h => h.remove()); }
 
         if (window.Game.animationFrameId) cancelAnimationFrame(window.Game.animationFrameId);
