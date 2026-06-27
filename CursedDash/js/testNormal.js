@@ -12,7 +12,7 @@ if (!window.NormalLevelEngine) {
             
             if (pct >= 100) { 
                 window.Game.gameActive = false; 
-                window.AudioEngine.stopMusic(); 
+                if (window.AudioEngine) window.AudioEngine.stopMusic(); 
                 if (window.PhysicsEngine && window.PhysicsEngine.clearGameContainer) window.PhysicsEngine.clearGameContainer();
                 setTimeout(() => { alert("Официальный уровень Создателя успешно пройден! Поздравляем!"); window.MenuEngine.backToMenu(); }, 50); 
                 return true; 
@@ -40,7 +40,6 @@ if (!window.NormalLevelEngine) {
                     });
                     window.Game.levelMaxLength = maxTargetX + 400;
                 } else {
-                    // ЕСЛИ УРОВНЯ НЕТ НА НАШЕМ "СЕРВЕРЕ" — МГНОВЕННЫЙ СТОП И ВЫХОД В МЕНЮ!
                     window.Game.gameActive = false;
                     if (window.AudioEngine) window.AudioEngine.stopMusic();
                     if (window.PhysicsEngine && window.PhysicsEngine.clearGameContainer) window.PhysicsEngine.clearGameContainer();
