@@ -16,7 +16,7 @@ if (!window.EffectsEngine) {
         updateParticles() {
             for (let i = window.Game.particles.length - 1; i >= 0; i--) {
                 const p = window.Game.particles[i]; p.x += p.vx; p.y += p.vy; 
-                if (p.isSmoke) { p.vy -= 0.05; p.size += 0.2; } else { p.vy += 0.1; }
+                if (p.isSmoke) { p.vy -= 0.03; p.size += 0.25; } else { p.vy += 0.15; }
                 p.life--; p.element.style.left = p.x + 'px'; p.element.style.top = (400 - p.y) + 'px'; 
                 p.element.style.opacity = p.life / p.maxLife; p.element.style.width = p.size + 'px'; p.element.style.height = p.size + 'px';
                 if (p.life <= 0) { p.element.remove(); window.Game.particles.splice(i, 1); } 
@@ -33,14 +33,30 @@ if (!window.EffectsEngine) {
             }
         },
 
-        createRocketTrail(x, y) {
-            const liveContainer = document.getElementById('gameContainer'); if (!liveContainer || Math.random() > 0.4) return;
+        // ИСПРАВЛЕНИЕ: Огонь теперь генерируется ВСЕГДА и непрерывно
+        createRocketTrail(x, y, isHolding) {
+            const liveContainer = document.getElementById('gameContainer');
+            if (!liveContainer) return;
             const skinColor = window.Game.SKINS[window.Game.selectedSkinIndex].bg;
-            const pEl = document.createElement('div'); pEl.classList.add('particle'); pEl.style.background = skinColor; pEl.style.boxShadow = `0 0 8px ${skinColor}`; liveContainer.appendChild(pEl);
-            window.Game.particles.push({ element: pEl, x: x + 5, y: y + 15, vx: -Math.random() * 3 - 2, vy: (Math.random() - 0.5) * 2, life: 20, maxLife: 20, size: 5, isSmoke: false });
-            if (Math.random() > 0.5) {
-                const dEl = document.createElement('div'); dEl.classList.add('particle'); dEl.style.background = 'rgba(150, 150, 150, 0.4)'; dEl.style.borderRadius = '50%'; liveContainer.appendChild(dEl);
-                window.Game.particles.push({ element: dEl, x: x, y: y + 15, vx: -Math.random() * 2 - 1, vy: Math.random() * 0.5, life: 30, maxLife: 30, size: 8, isSmoke: true });
+            
+            // Настройки длины и скорости пламени (сильнее при зажатом Пробеле)
+            let particleCount = isHolding ? 3 : 1;
+            let baseLife = isHolding ? 25 : 14;
+            let baseSpeedX = isHolding ? -5 : -3;
+
+            for(let k = 0; k < particleCount; k++) {
+                const pEl = document.createElement('div'); pEl.classList.add('particle');
+                pEl.style.background = skinColor; pEl.style.boxShadow = `0 0 10px ${skinColor}`;
+                liveContainer.appendChild(pEl);
+                window.Game.particles.push({ element: pEl, x: x - 5, y: y + 12, vx: baseSpeedX - Math.random() * 3, vy: (Math.random() - 0.5) * 3, life: baseLife, maxLife: baseLife, size: Math.random() * 3 + 4, isSmoke: false });
+            }
+
+            // Шлейф дыма
+            if (Math.random() < 0.7) {
+                const dEl = document.createElement('div'); dEl.classList.add('particle');
+                dEl.style.background = 'rgba(160, 160, 160, 0.35)'; dEl.style.borderRadius = '50%';
+                liveContainer.appendChild(dEl);
+                window.Game.particles.push({ element: dEl, x: x - 10, y: y + 12, vx: -2 - Math.random() * 2, vy: Math.random() * 0.5, life: 35, maxLife: 35, size: 7, isSmoke: true });
             }
         }
     };
