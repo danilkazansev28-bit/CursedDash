@@ -84,9 +84,7 @@ window.PhysicsEngine = {
         const liveCube = document.getElementById('cube');
         if (liveCube) {
             liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`;
-            // СУПЕР-ФИКС 1-К-1: Свойство content выводит файл без изменения оригинального масштаба пикселей!
-            const imgName = window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png';
-            liveCube.style.content = `url("/assets/images/${imgName}")`;
+            liveCube.style.backgroundImage = `url("/assets/images/${window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png'}")`;
         }
         
         let activeBaseSpeed = window.Game.LEVEL_DATA[window.Game.currentLevel] ? window.Game.LEVEL_DATA[window.Game.currentLevel].speed : 5.5;
@@ -95,9 +93,7 @@ window.PhysicsEngine = {
         window.Game.score += finalMovementSpeed;
         const liveScore = document.getElementById('scoreVal'); if (liveScore) liveScore.textContent = Math.floor(window.Game.score);
 
-        const liveProgText = document.getElementById('progressText');
-        const liveProgFill = document.getElementById('progressBarFill');
-
+        const liveProgText = document.getElementById('progressText'); const liveProgFill = document.getElementById('progressBarFill');
         if (window.Game.isTestingCustom) {
             if (window.CustomTestEngine && window.CustomTestEngine.handleProgress(finalMovementSpeed, liveProgText, liveProgFill)) return;
             if (window.CustomTestEngine) window.CustomTestEngine.handleSpawning();
@@ -105,7 +101,6 @@ window.PhysicsEngine = {
             if (window.NormalLevelEngine && window.NormalLevelEngine.handleProgress(finalMovementSpeed, liveProgText, liveProgFill)) return;
             if (window.NormalLevelEngine) window.NormalLevelEngine.handleSpawning();
         }
-
         if (window.EffectsEngine) window.EffectsEngine.updateBackgroundPulse();
 // js/physics.js - Часть 3 из 4
         const cL = 100, cR = 140, cB = 50 - window.Game.cubeY, cT = cB + window.Game.CUBE_SIZE, p = 5;
@@ -113,7 +108,7 @@ window.PhysicsEngine = {
 
         for (let i = window.Game.solidBlocks.length - 1; i >= 0; i--) {
             const b = window.Game.solidBlocks[i]; b.x -= finalMovementSpeed; b.element.style.left = b.x + 'px';
-            b.element.style.content = "url('/assets/images/block.png')"; // Оригинальный размер блока 
+            b.element.style.backgroundImage = "url('/assets/images/block.png')";
             if (b.x < -50) { b.element.remove(); window.Game.solidBlocks.splice(i, 1); continue; }
             if (cR > b.x && cL < b.x + b.width && cT > b.bottom && cB < b.bottom + b.height) {
                 const overlapY = cB - (b.bottom + b.height);
@@ -139,38 +134,30 @@ window.PhysicsEngine = {
         }
         for (let i = window.Game.portals.length - 1; i >= 0; i--) {
             const prt = window.Game.portals[i]; prt.x -= finalMovementSpeed; prt.element.style.left = prt.x + 'px';
-            prt.element.style.content = "url('/assets/images/portal.png')"; // Оригинальный размер портала
+            prt.element.style.backgroundImage = "url('/assets/images/portal.png')";
             if (prt.x < -50) { prt.element.remove(); window.Game.portals.splice(i, 1); continue; }
             if (cR > prt.x && cL < prt.x + prt.width && cB < prt.bottom + prt.height && cT > prt.bottom) {
                 window.AudioEngine.playPortalSound(); prt.element.remove(); window.Game.portals.splice(i, 1);
-                const liveCube = document.getElementById('cube');
-                if (window.Game.currentMode === 'cube') { 
-                    window.Game.currentMode = 'ship'; if (liveCube) liveCube.style.borderRadius = '50% 10px 10px 50%'; 
-                } else { 
-                    window.Game.currentMode = 'cube'; if (liveCube) liveCube.style.borderRadius = '4px'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
+                // ЖЕСТКИЙ ФИКС КУБА И КОРАБЛЯ: Полностью удалили borderRadius, кораблик останется кубической формы!
+                if (window.Game.currentMode === 'cube') { window.Game.currentMode = 'ship'; } 
+                else { window.Game.currentMode = 'cube'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
 // js/physics.js - Часть 4 из 4
         for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
             const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
-            sp.element.style.content = "url('/assets/images/speed.png')"; // Оригинальный размер ворот скорости
+            sp.element.style.backgroundImage = "url('/assets/images/speed.png')";
             if (sp.x < -50) { sp.element.remove(); window.Game.speedPortals.splice(i, 1); continue; } 
-            let portalWidth = 25; let portalHeight = 100; 
-            let portalBottom = parseInt(sp.element.style.bottom || sp.bottom || 50, 10); let portalTop = portalBottom + portalHeight;
+            let portalWidth = 25; let portalHeight = 100; let portalBottom = parseInt(sp.element.style.bottom || sp.bottom || 50, 10); let portalTop = portalBottom + portalHeight;
             let isCollidingX = (cR >= sp.x && cL <= sp.x + portalWidth) || (cR + finalMovementSpeed >= sp.x && cL - finalMovementSpeed <= sp.x + portalWidth);
             let isCollidingY = (cT >= portalBottom && cB <= portalTop);
             if (isCollidingX && isCollidingY) { 
-                window.AudioEngine.playPortalSound(); 
-                if (sp.type.includes('slow')) window.Game.currentSpeedMultiplier = 0.65;
-                else if (sp.type.includes('fast')) window.Game.currentSpeedMultiplier = 1.5;
-                else window.Game.currentSpeedMultiplier = 1.0;
-                sp.element.remove(); window.Game.speedPortals.splice(i, 1);
+                window.AudioEngine.playPortalSound(); if (sp.type.includes('slow')) window.Game.currentSpeedMultiplier = 0.65; else if (sp.type.includes('fast')) window.Game.currentSpeedMultiplier = 1.5; else window.Game.currentSpeedMultiplier = 1.0; sp.element.remove(); window.Game.speedPortals.splice(i, 1);
             } 
         }
         let insideAnyOrb = false; for (let i = window.Game.orbs.length - 1; i >= 0; i--) { const ob = window.Game.orbs[i]; ob.x -= finalMovementSpeed; ob.element.style.left = ob.x + 'px'; if (ob.x < -50) { ob.element.remove(); window.Game.orbs.splice(i, 1); continue; } if (cR > ob.x && cL < ob.x + ob.width && cB < ob.bottom + ob.height && cT > ob.bottom) { insideAnyOrb = true; window.Game.activeOrbIndex = i; } } window.Game.isInsideOrb = insideAnyOrb; if (!window.Game.isInsideOrb) window.Game.activeOrbIndex = -1;
         
         for (let i = window.Game.spikes.length - 1; i >= 0; i--) { 
             const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; 
-            // СУПЕР-ФИКС 1-К-1 ДЛЯ ШИПОВ: Картинка шипа выведется ровно в своих родных пикселях! Без искажений!
-            spike.element.style.content = "url('/assets/images/spike.png')";
+            spike.element.style.backgroundImage = "url('/assets/images/spike.png')";
             if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } 
             if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } } 
         }
@@ -181,7 +168,7 @@ window.PhysicsEngine = {
         if (window.Game.animationFrameId) { cancelAnimationFrame(window.Game.animationFrameId); window.Game.animationFrameId = null; }
         window.Game.gameActive = false; this.clearGameContainer(); 
         window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; window.Game.rotation = 0; window.Game.targetRotation = 0; window.Game.currentMode = 'cube'; window.Game.currentSpeedMultiplier = 1.0; window.Game.spawnProtectionFrames = 15; window.Game.isHoldingAction = false; window.Game.isInsideOrb = false; window.Game.activeOrbIndex = -1; window.Game.padCooldown = 0;
-        const liveCube = document.getElementById('cube'); if (liveCube) { liveCube.style.display = 'flex'; liveCube.style.borderRadius = '4px'; liveCube.style.transform = `translateY(0px) rotate(0deg)`; }
+        const liveCube = document.getElementById('cube'); if (liveCube) { liveCube.style.display = 'flex'; liveCube.style.transform = `translateY(0px) rotate(0deg)`; }
         window.Game.score = 0; window.Game.currentSpeed = window.Game.LEVEL_DATA[window.Game.currentLevel] ? window.Game.LEVEL_DATA[window.Game.currentLevel].speed : 5.5; window.Game.spawnTimer = 0; 
         const liveScore = document.getElementById('scoreVal'); if (liveScore) liveScore.textContent = '0'; 
         const liveProgFill = document.getElementById('progressBarFill'); if (liveProgFill) liveProgFill.style.width = '0%'; 
@@ -195,10 +182,10 @@ window.PhysicsEngine = {
                 let maxTargetX = 800; window.Game.customObjects.forEach(obj => { if (obj.x > maxTargetX) maxTargetX = obj.x; }); window.Game.levelMaxLength = maxTargetX + 200;
                 window.Game.customObjects.forEach(obj => { 
                     const elClone = obj.element.cloneNode(true); elClone.style.display = 'block'; elClone.style.left = obj.x + 'px'; liveObjLayer.appendChild(elClone); 
-                    if (obj.type === 'solid-block') { elClone.style.content = "url('/assets/images/block.png')"; window.Game.solidBlocks.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); }
-                    else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') { elClone.style.content = "url('/assets/images/spike.png')"; window.Game.spikes.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 40, height: 40, bottom: parseInt(obj.bottom, 10) }); } 
-                    else if (obj.type === 'portal') { elClone.style.content = "url('/assets/images/portal.png')"; window.Game.portals.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); } 
-                    else if (obj.type.startsWith('speed-')) { elClone.style.content = "url('/assets/images/speed.png')"; window.Game.speedPortals.push({ element: elClone, x: parseInt(obj.x, 10), type: obj.type, width: 25, height: 100, bottom: parseInt(obj.bottom, 10) }); } 
+                    if (obj.type === 'solid-block') { elClone.style.backgroundImage = "url('/assets/images/block.png')"; window.Game.solidBlocks.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); }
+                    else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') { elClone.style.backgroundImage = "url('/assets/images/spike.png')"; window.Game.spikes.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 40, height: 40, bottom: parseInt(obj.bottom, 10) }); } 
+                    else if (obj.type === 'portal') { elClone.style.backgroundImage = "url('/assets/images/portal.png')"; window.Game.portals.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); } 
+                    else if (obj.type.startsWith('speed-')) { elClone.style.backgroundImage = "url('/assets/images/speed.png')"; window.Game.speedPortals.push({ element: elClone, x: parseInt(obj.x, 10), type: obj.type, width: 25, height: 100, bottom: parseInt(obj.bottom, 10) }); } 
                     else if (obj.type.startsWith('orb-')) window.Game.orbs.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 30, height: 30, bottom: parseInt(obj.bottom, 10) }); 
                     else if (obj.type.startsWith('pad-')) window.Game.pads.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 34, height: 12, bottom: parseInt(obj.bottom, 10) }); 
                 }); 
