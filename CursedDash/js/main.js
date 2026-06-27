@@ -80,9 +80,9 @@ window.MenuEngine = {
             item.innerHTML = `<span>${lvl.name}</span><div class="level-item-btns"><button style="background:#00ff88; color:#111;" id="playCustom-${idx}">Играть</button><button style="background:#0f3460" id="editCustom-${idx}">Ред.</button><button style="background:#e94560" id="delCustom-${idx}">Х</button></div>`; 
             window.Game.DOM.levelsListContainer.appendChild(item); 
             
-            document.getElementById(`playCustom-${idx}`).addEventListener('click', () => this.loadAndPlayLevel(idx)); 
-            document.getElementById(`editCustom-${idx}`).addEventListener('click', () => this.loadAndEditLevel(idx)); 
-            document.getElementById(`delCustom-${idx}`).addEventListener('click', () => this.deleteLevel(idx)); 
+            document.getElementById(`playCustom-${idx}`).addEventListener('click', (e) => { e.stopPropagation(); this.loadAndPlayLevel(idx); }); 
+            document.getElementById(`editCustom-${idx}`).addEventListener('click', (e) => { e.stopPropagation(); this.loadAndEditLevel(idx); }); 
+            document.getElementById(`delCustom-${idx}`).addEventListener('click', (e) => { e.stopPropagation(); this.deleteLevel(idx); }); 
         }); 
     },
     deleteLevel(idx) { if (!confirm("Удалить уровень?")) return; const lvls = window.EditorEngine.getSavedLevels(); lvls.splice(idx, 1); localStorage.setItem('gd_custom_levels', JSON.stringify(lvls)); this.renderSavedLevels(); },
@@ -128,7 +128,7 @@ window.MenuEngine = {
         window.Game.currentLevel = lvl; 
         window.Game.isTestingCustom = false; 
         window.Game.isEditorMode = false; 
-        window.Game.isHoldingAction = false; // Чистим клики при старте
+        window.Game.isHoldingAction = false; // ЖЕСТКО ОБНУЛЯЕМ ЗАЖАТИЕ ПРИ СТАРТЕ ОФИЦИАЛЬНОГО УРОВНЯ
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
         if (window.AudioEngine) window.AudioEngine.initAudio(); 
@@ -138,7 +138,7 @@ window.MenuEngine = {
         this.switchScreen('none');
         window.Game.isEditorMode = false; 
         window.Game.isTestingCustom = true; 
-        window.Game.isHoldingAction = false; // Чистим клики при старте
+        window.Game.isHoldingAction = false; // ЖЕСТКО ОБНУЛЯЕМ ЗАЖАТИЕ ПРИ ЗАПУСКЕ ТЕСТА
         window.Game.currentLevel = 'custom'; 
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'block'; 
@@ -212,7 +212,14 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     preloadEverything();
 
-    const bindClick = (id, action) => { try { const el = document.getElementById(id); if (el) el.addEventListener('click', action); } catch(e){} };
+    // СУПЕР-ФИКС КЛИКОВ МЕНЮ: Добавили e.stopPropagation(), чтобы клик по кнопке НЕ взрывал физику куба!
+    const bindClick = (id, action) => { 
+        try { 
+            const el = document.getElementById(id); 
+            if (el) el.addEventListener('click', (e) => { e.stopPropagation(); action(); }); 
+        } catch(e){} 
+    };
+    
     bindClick('btnPlayLvl1', () => window.MenuEngine.startGame(1));
     bindClick('btnPlayLvl2', () => window.MenuEngine.startGame(2));
     bindClick('btnPlayLvl3', () => window.MenuEngine.startGame(3));
@@ -225,13 +232,12 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('btnEditExit', () => window.MenuEngine.backToMenu());
     bindClick('btnEditorExit', () => window.MenuEngine.backToMenu());
     bindClick('btnGameOverExit', () => window.MenuEngine.backToMenu());
-    if (window.Game.DOM.stopTestBtn) { window.Game.DOM.stopTestBtn.addEventListener('click', () => window.MenuEngine.backToMenu()); }
+    if (window.Game.DOM.stopTestBtn) { window.Game.DOM.stopTestBtn.addEventListener('click', (e) => { e.stopPropagation(); window.MenuEngine.backToMenu(); }); }
     
     window.Game.toggleSkins = function(show) { window.MenuEngine.switchScreen(show ? 'skins' : 'mainMenu'); };
     window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); window.Game.applySkin(); };
     window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; const s = window.Game.SKINS[window.Game.selectedSkinIndex]; window.Game.DOM.cube.style.background = s.bg; window.Game.DOM.cube.textContent = s.text; window.Game.DOM.cube.style.display = 'flex'; };
     
-    // ЕДИНЫЙ ЦЕНТРАЛЬНЫЙ СЛУШАТЕЛЬ КЛАВИАТУРЫ
     window.addEventListener('keydown', (e) => { 
         if (e.code === 'Space') { 
             e.preventDefault(); 
@@ -246,7 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } 
     });
     
-    // ИЗОЛЯЦИЯ КЛИКОВ МЫШКИ: Прыгаем только на пустом поле
+    // НАДЁЖНЫЙ ФИЛЬТР ИГРОВОГО ПОЛЯ: Клик по кнопкам или панелям полностью игнорируется
     window.Game.DOM.container.addEventListener('mousedown', (e) => { 
         if (!window.Game.gameActive || window.Game.isEditorMode) return; 
         if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel') || e.target.closest('#mainMenuScreen') || e.target.closest('#gameOverScreen')) return;
