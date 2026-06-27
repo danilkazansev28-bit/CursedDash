@@ -63,11 +63,13 @@ window.PhysicsEngine = {
                 window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; 
             }
         } else {
+            // ФИКС ПЛАМЕНИ: Огонь теперь генерируется НЕПРЕРЫВНО в каждом кадре полета!
             if (window.Game.isHoldingAction) { 
                 window.Game.cubeVelocityY += window.Game.THRUST_SHIP; 
                 if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, true);
             } else { 
                 window.Game.cubeVelocityY += window.Game.GRAVITY_SHIP; 
+                // Создаем пламя, даже когда кнопка отпущена
                 if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, false);
             }
             window.Game.cubeVelocityY = Math.max(-6, Math.min(6, window.Game.cubeVelocityY)); window.Game.cubeY += window.Game.cubeVelocityY;
@@ -137,18 +139,22 @@ window.PhysicsEngine = {
                 } else { 
                     window.Game.currentMode = 'cube'; if (liveCube) liveCube.style.borderRadius = '4px'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
         
-        // ИСПРАВЛЕНИЕ ПРОПУСКА СКОРОСТЕЙ: Больше никакой бесконечной вертикальной коллизии!
+        // ЖЕСТКИЙ АВТОНОМНЫЙ ФИКС ХИТБОКСА СКОРОСТИ
         for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
             const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
             if (sp.x < -50) { sp.element.remove(); window.Game.speedPortals.splice(i, 1); continue; } 
             
-            let portalWidth = 30;
-            let portalHeight = 100;
+            let portalWidth = 25; 
+            let portalHeight = 100; 
             
-            // Проверка строго внутри прямоугольных границ [sp.bottom, sp.bottom + 100]
-            // Если игрок летит выше sp.bottom + 100 или ниже sp.bottom — коллизии НЕ БУДЕТ (портал можно пропустить!)
+            // Заставляем движок принудительно перевести высоту в пиксельное число, чтобы убрать баг пролета под порталом
+            let portalBottom = parseInt(sp.element.style.bottom || sp.bottom || 50, 10); 
+            let portalTop = portalBottom + portalHeight;
+
             let isCollidingX = (cR >= sp.x && cL <= sp.x + portalWidth) || (cR + finalMovementSpeed >= sp.x && cL - finalMovementSpeed <= sp.x + portalWidth);
-            let isCollidingY = (cT >= sp.bottom && cB <= sp.bottom + portalHeight);
+            // Проверка строго внутри коридора [portalBottom, portalTop]. 
+            // Если игрок летит ПОД или НАД воротами — они его не заденут!
+            let isCollidingY = (cT >= portalBottom && cB <= portalTop);
 
             if (isCollidingX && isCollidingY) { 
                 window.AudioEngine.playPortalSound(); 
@@ -184,12 +190,12 @@ window.PhysicsEngine = {
                 let maxTargetX = 800; window.Game.customObjects.forEach(obj => { if (obj.x > maxTargetX) maxTargetX = obj.x; }); window.Game.levelMaxLength = maxTargetX + 200;
                 window.Game.customObjects.forEach(obj => { 
                     const elClone = obj.element.cloneNode(true); elClone.style.display = 'block'; elClone.style.left = obj.x + 'px'; liveObjLayer.appendChild(elClone); 
-                    if (obj.type === 'solid-block') window.Game.solidBlocks.push({ element: elClone, x: obj.x, width: obj.width, height: obj.height, bottom: obj.bottom });
-                    else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') window.Game.spikes.push({ element: elClone, type: obj.type, x: obj.x, width: obj.width, height: obj.height, bottom: obj.bottom }); 
-                    else if (obj.type === 'portal') window.Game.portals.push({ element: elClone, x: obj.x, width: obj.width, height: obj.height, bottom: obj.bottom }); 
-                    else if (obj.type.startsWith('speed-')) window.Game.speedPortals.push({ element: elClone, x: obj.x, type: obj.type, width: 25, height: 100, bottom: obj.bottom }); 
-                    else if (obj.type.startsWith('orb-')) window.Game.orbs.push({ element: elClone, type: obj.type, x: obj.x, width: 30, height: 30, bottom: obj.bottom }); 
-                    else if (obj.type.startsWith('pad-')) window.Game.pads.push({ element: elClone, type: obj.type, x: obj.x, width: 34, height: 12, bottom: 50 }); 
+                    if (obj.type === 'solid-block') window.Game.solidBlocks.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) });
+                    else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') window.Game.spikes.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); 
+                    else if (obj.type === 'portal') window.Game.portals.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); 
+                    else if (obj.type.startsWith('speed-')) window.Game.speedPortals.push({ element: elClone, x: parseInt(obj.x, 10), type: obj.type, width: 25, height: 100, bottom: parseInt(obj.bottom, 10) }); 
+                    else if (obj.type.startsWith('orb-')) window.Game.orbs.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 30, height: 30, bottom: parseInt(obj.bottom, 10) }); 
+                    else if (obj.type.startsWith('pad-')) window.Game.pads.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 34, height: 12, bottom: parseInt(obj.bottom, 10) }); 
                 }); 
             }
         }
