@@ -31,25 +31,16 @@ if (!window.CustomTestEngine) {
                     obj.element.style.left = obj.x + 'px';
                     obj.element.style.pointerEvents = 'none';
                     
-                    if (obj.type === 'solid-block') {
-                        obj.element.style.backgroundImage = "url('/assets/images/block.png')";
-                    } else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') {
-                        obj.element.style.backgroundImage = "url('/assets/images/spike.png')";
-                    } else if (obj.type === 'portal') {
-                        obj.element.style.backgroundImage = "url('/assets/images/portal.png')";
-                    } else if (obj.type.startsWith('speed-')) {
-                        obj.element.style.backgroundImage = "url('/assets/images/speed.png')";
-                    }
+                    if (obj.type === 'solid-block') { obj.element.style.backgroundImage = "url('/assets/images/block.png')"; } 
+                    else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') { obj.element.style.backgroundImage = "url('/assets/images/spike.png')"; } 
+                    else if (obj.type === 'portal') { obj.element.style.backgroundImage = "url('/assets/images/portal.png')"; } 
+                    else if (obj.type.startsWith('speed-')) { obj.element.style.backgroundImage = "url('/assets/images/speed.png')"; }
                     
-                    if (obj.x > -50 && obj.x < 900) {
-                        liveObjLayer.appendChild(obj.element);
-                    }
+                    if (obj.x > -50 && obj.x < 900) { liveObjLayer.appendChild(obj.element); }
                 } else if (obj.element) {
                     obj.x -= finalMovementSpeed;
                     obj.element.style.left = obj.x + 'px';
-                    if (obj.x < -50) {
-                        obj.element.remove();
-                    }
+                    if (obj.x < -50) { obj.element.remove(); }
                 }
             });
         },
