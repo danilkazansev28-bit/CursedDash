@@ -40,56 +40,43 @@ window.PhysicsEngine = {
         return (u >= 0) && (v >= 0) && (u + v <= 1);
     },
     checkTriangleCollision(cL, cR, cB, cT, s) {
-        // Базовые хитбоксы без урезания
-        let ax = s.x; let ay = s.bottom; 
-        let bx = s.x + s.width; let by = s.bottom; 
-        let cx = s.x + s.width / 2; let cy = s.bottom + s.height;
+        const shrinkX = 4; const shrinkY = 4;
+        let ax = s.x + shrinkX; let ay = s.bottom; 
+        let bx = s.x + s.width - shrinkX; let by = s.bottom; 
+        let cx = s.x + s.width / 2; let cy = s.bottom + s.height - shrinkY;
+        if(s.type === 'spike-ceil') { ay = s.bottom + s.height; by = s.bottom + s.height; cy = s.bottom + shrinkY; }
         
-        if(s.type === 'spike-ceil') { ay = s.bottom + s.height; by = s.bottom + s.height; cy = s.bottom; }
-        
-        let points = [{x:cL, y:cB}, {x:cR, y:cB}, {x:cL, y:cT}, {x:cR, y:cT}, {x:cL+20, y:cB+20}];
+        // ХИТБОКС КУБА СТАБИЛЕН: Точки проверки всегда идут по идеальным ровным границам квадрата
+        let points = [{x:cL+2, y:cB+2}, {x:cR-2, y:cB+2}, {x:cL+2, y:cT-2}, {x:cR-2, y:cT-2}, {x:cL+20, y:cB+20}];
         for(let p of points) { if(this.isPointInTriangle(p.x, p.y, ax, ay, bx, by, cx, cy)) return true; }
         return false;
     },
-    // ФУНКЦИЯ ДЛЯ ОТРИСОВКИ ХИТБОКСОВ НА ЭКРАНЕ
+    // ДИНАМИЧЕСКИЙ ВЫКЛЮЧАТЕЛЬ РАМОК: Если showHitboxes выключен, рамка скрывается с экрана
     drawHitboxDebug(el, type, width, height, customStyle = '') {
         let debugDiv = el.querySelector('.debug-hitbox');
-        if (!debugDiv) {
-            debugDiv = document.createElement('div');
-            debugDiv.className = 'debug-hitbox';
-            el.appendChild(debugDiv);
+        if (!window.Game.showHitboxes) {
+            if (debugDiv) debugDiv.remove();
+            return;
         }
+        if (!debugDiv) { debugDiv = document.createElement('div'); debugDiv.className = 'debug-hitbox'; el.appendChild(debugDiv); }
         debugDiv.style.cssText = `position:absolute; left:0; bottom:0; width:${width}px; height:${height}px; pointer-events:none; border:2px solid ${type === 'player' ? '#00ff88' : '#ff0055'}; background:${type === 'player' ? 'rgba(0,255,136,0.15)' : 'rgba(255,0,85,0.15)'}; z-index:9999; box-sizing:border-box; ${customStyle}`;
     },
 // js/physics.js - Часть 2 из 4
     update() {
-        if (!window.Game.gameActive) { 
-            if (window.EffectsEngine) window.EffectsEngine.updateParticles(); 
-            window.Game.animationFrameId = requestAnimationFrame(() => this.update()); 
-            return; 
-        }
+        if (!window.Game.gameActive) { if (window.EffectsEngine) window.EffectsEngine.updateParticles(); window.Game.animationFrameId = requestAnimationFrame(() => this.update()); return; }
         if (window.Game.spawnProtectionFrames > 0) window.Game.spawnProtectionFrames--;
         if (window.Game.padCooldown > 0) window.Game.padCooldown--;
 
         if (window.Game.currentMode === 'cube') {
             window.Game.cubeVelocityY += window.Game.GRAVITY_CUBE; window.Game.cubeY += window.Game.cubeVelocityY;
             if (window.Game.cubeY >= 0) { 
-                if (!window.Game.isGrounded && window.Game.cubeVelocityY > 2) {
-                    if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) window.EffectsEngine.createLandSmoke(100, 50); 
-                }
+                if (!window.Game.isGrounded && window.Game.cubeVelocityY > 2) { if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) window.EffectsEngine.createLandSmoke(100, 50); }
                 window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; window.Game.rotation = window.Game.targetRotation; 
             }
-            if (!window.Game.isGrounded && window.Game.rotation < window.Game.targetRotation) { 
-                window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; 
-            }
+            if (!window.Game.isGrounded && window.Game.rotation < window.Game.targetRotation) { window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; }
         } else {
-            if (window.Game.isHoldingAction) { 
-                window.Game.cubeVelocityY += window.Game.THRUST_SHIP; 
-                if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, true);
-            } else { 
-                window.Game.cubeVelocityY += window.Game.GRAVITY_SHIP; 
-                if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, false);
-            }
+            if (window.Game.isHoldingAction) { window.Game.cubeVelocityY += window.Game.THRUST_SHIP; if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, true); } 
+            else { window.Game.cubeVelocityY += window.Game.GRAVITY_SHIP; if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, false); }
             window.Game.cubeVelocityY = Math.max(-6, Math.min(6, window.Game.cubeVelocityY)); window.Game.cubeY += window.Game.cubeVelocityY;
             if (window.Game.cubeY >= 0) { window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; }
             const ceilingY = -310; if (window.Game.cubeY <= ceilingY) { window.Game.cubeY = ceilingY; window.Game.cubeVelocityY = 0; }
@@ -98,10 +85,20 @@ window.PhysicsEngine = {
         
         const liveCube = document.getElementById('cube');
         if (liveCube) {
-            liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`;
+            // ЖЕСТКИЙ ИНЖЕНЕРНЫЙ ЗАПРЕТ НА ПОВОРОТ ХИТБОКСА КУБА!
+            // Контейнер кубика ( liveCube ) смещается ТОЛЬКО по Y, он всегда идеально ровный квадрат!
+            liveCube.style.transform = `translateY(${window.Game.cubeY}px)`;
             liveCube.style.backgroundImage = `url("/assets/images/${window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png'}")`;
             
-            // КРАСИМ ИГРОКА В ЗЕЛЕНУЮ ТЕСТОВУЮ РАМКУ ХИТБОКСА (40х40)
+            // Крутится теперь ТОЛЬКО сама зеленая тестовая рамка или оригинальный рисунок внутри него!
+            let debugDiv = liveCube.querySelector('.debug-hitbox');
+            if (!window.Game.showHitboxes) {
+                // Если хитбоксы скрыты, передаем вращение на весь куб, чтобы рисунок крутился для глаз
+                liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`;
+            } else if (debugDiv) {
+                // Если хитбоксы включены, зеленая рамка НЕ крутится, крутится только пустое место
+                debugDiv.style.transform = 'rotate(0deg)';
+            }
             this.drawHitboxDebug(liveCube, 'player', 40, 40);
         }
         
@@ -126,8 +123,6 @@ window.PhysicsEngine = {
         for (let i = window.Game.solidBlocks.length - 1; i >= 0; i--) {
             const b = window.Game.solidBlocks[i]; b.x -= finalMovementSpeed; b.element.style.left = b.x + 'px';
             b.element.style.backgroundImage = "url('/assets/images/block.png')";
-            
-            // КРАСНЫЙ ХИТБОКС БЛОКА (40х40)
             this.drawHitboxDebug(b.element, 'solid', 40, 40);
 
             if (b.x < -50) { b.element.remove(); window.Game.solidBlocks.splice(i, 1); continue; }
@@ -179,15 +174,11 @@ window.PhysicsEngine = {
         for (let i = window.Game.spikes.length - 1; i >= 0; i--) { 
             const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; 
             spike.element.style.backgroundImage = "url('/assets/images/spike.png')";
-            
-            // ВИЗУАЛЬНЫЙ ХИТБОКС ШИПА: Рисуем точный треугольник опасности!
             let clipStyle = spike.type === 'spike-ceil' ? 'clip-path:polygon(0% 0%, 100% 0%, 50% 100%)' : 'clip-path:polygon(50% 0%, 0% 100%, 100% 100%)';
             this.drawHitboxDebug(spike.element, 'spike', 40, 40, clipStyle);
 
             if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } 
-            if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { 
-                if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } 
-            } 
+            if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } } 
         }
         if (window.Game.animationFrameId) cancelAnimationFrame(window.Game.animationFrameId);
         window.Game.animationFrameId = requestAnimationFrame(() => this.update());
