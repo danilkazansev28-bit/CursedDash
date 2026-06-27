@@ -8,6 +8,13 @@ import './effects.js';
 window.PhysicsEngine = {
     pressAction() { 
         if (!window.Game.gameActive || window.Game.isEditorMode) return; 
+        
+        // Если мы в воздухе в режиме куба, зажатие принудительно ИГНОРИРУЕТСЯ И ВЫКЛЮЧАЕТСЯ
+        if (window.Game.currentMode === 'cube' && !window.Game.isGrounded) {
+            window.Game.isHoldingAction = false;
+            return;
+        }
+        
         window.Game.isHoldingAction = true; 
         
         if (window.Game.isInsideOrb && window.Game.currentMode === 'cube') {
@@ -19,16 +26,18 @@ window.PhysicsEngine = {
             }
             window.Game.cubeVelocityY = jumpPower; 
             window.Game.isGrounded = false; 
+            window.Game.isHoldingAction = false; // Автовыключение функции до приземления!
             window.Game.targetRotation += 180; 
             window.Game.rotationSpeed = 180 / Math.abs((2 * jumpPower) / window.Game.GRAVITY_CUBE); 
             window.AudioEngine.playPortalSound(); 
             return;
         }
         
-        // Одиночное нажатие: прыгаем только если жестко стоим на земле
+        // Одиночный прыжок с земли: подпрыгиваем и мгновенно вырубаем зажатие
         if (window.Game.currentMode === 'cube' && window.Game.isGrounded) { 
             window.Game.cubeVelocityY = window.Game.JUMP_CUBE; 
             window.Game.isGrounded = false; 
+            window.Game.isHoldingAction = false; // Автоматически вырубаем функцию в воздухе!
             window.Game.targetRotation += 180; 
             window.Game.rotationSpeed = 180 / Math.abs((2 * window.Game.JUMP_CUBE) / window.Game.GRAVITY_CUBE); 
         } 
@@ -65,20 +74,24 @@ window.PhysicsEngine = {
         if (window.Game.currentMode === 'cube') {
             window.Game.cubeVelocityY += window.Game.GRAVITY_CUBE; window.Game.cubeY += window.Game.cubeVelocityY;
             
+            // КАСАНИЕ ПОЛА: Скрипт сообщает функции, что мы на земле, и разрешает активацию!
             if (window.Game.cubeY >= 0) { 
                 window.Game.cubeY = 0; 
                 window.Game.cubeVelocityY = 0; 
                 window.Game.isGrounded = true; 
                 window.Game.rotation = window.Game.targetRotation; 
-
-                // КРАСИВЫЙ ФИКС ЗАЖАТИЯ ДЛЯ КУБА: Если игрок держит палец/Пробел В МОМЕНТ КАСАНИЯ ПОЛА — прыгаем!
+                
+                // Функция снова активна! Если клавиша всё ещё удерживается после приземления — прыгаем заново
                 if (window.Game.isHoldingAction) {
                     window.Game.cubeVelocityY = window.Game.JUMP_CUBE; 
                     window.Game.isGrounded = false; 
+                    window.Game.isHoldingAction = false; // Сразу выключаем до следующего приземления!
                     window.Game.targetRotation += 180; 
                     window.Game.rotationSpeed = 180 / Math.abs((2 * window.Game.JUMP_CUBE) / window.Game.GRAVITY_CUBE); 
                 }
             } else {
+                // Если мы в воздухе — функция зажатия принудительно заблокирована
+                if (!window.Game.isHoldingAction) { window.Game.isHoldingAction = false; }
                 window.Game.isGrounded = false;
             }
             
@@ -139,10 +152,11 @@ window.PhysicsEngine = {
                     standingOnBlock = true; 
                     window.Game.rotation = window.Game.targetRotation;
 
-                    // КРАСИВЫЙ ФИКС ЗАЖАТИЯ НА БЛОКАХ: Автоматический прыжок при приземлении на блок сверху с зажатой клавишей!
+                    // КАСАНИЕ БЛОКА СВЕРХУ: Включаем функцию обратно и даем прыгнуть дальше!
                     if (window.Game.isHoldingAction && window.Game.currentMode === 'cube') {
                         window.Game.cubeVelocityY = window.Game.JUMP_CUBE; 
                         window.Game.isGrounded = false; 
+                        window.Game.isHoldingAction = false; // Снова отключаем в воздухе!
                         window.Game.targetRotation += 180; 
                         window.Game.rotationSpeed = 180 / Math.abs((2 * window.Game.JUMP_CUBE) / window.Game.GRAVITY_CUBE); 
                     }
@@ -160,6 +174,7 @@ window.PhysicsEngine = {
                 if (pd.type === 'pad-pink') bouncePower = window.Game.JUMP_CUBE * 0.8;
                 if (pd.type === 'pad-red') bouncePower = window.Game.JUMP_CUBE * 1.6;
                 window.Game.cubeVelocityY = bouncePower; window.Game.isGrounded = false;
+                window.Game.isHoldingAction = false; // Принудительный сброс на батутах
                 window.Game.targetRotation += 180; window.Game.rotationSpeed = 180 / Math.abs((2 * bouncePower) / window.Game.GRAVITY_CUBE);
                 window.AudioEngine.playPortalSound(); window.Game.padCooldown = 15; 
             }
