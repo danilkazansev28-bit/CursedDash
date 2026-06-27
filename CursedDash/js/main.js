@@ -69,17 +69,13 @@ window.MenuEngine = {
         if (!window.Game.DOM.levelsListContainer) return; 
         window.Game.DOM.levelsListContainer.innerHTML = ''; 
         
-        // Показываем черновики уровней только создателю-админу
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('admin') !== 'mysecret123') {
-            const title = document.getElementById('customLevelsTitle');
-            if (title) title.style.display = 'none';
-            return;
-        }
+        // Заголовок кастомных карт теперь виден ВСЕМ игрокам без исключения!
+        const title = document.getElementById('customLevelsTitle');
+        if (title) title.style.display = 'block';
 
         const levels = window.EditorEngine.getSavedLevels(); 
         if (levels.length === 0) { 
-            window.Game.DOM.levelsListContainer.innerHTML = '<div style="font-size:12px; color:#55547a; text-align:center; padding:10px;">Нет черновиков</div>'; 
+            window.Game.DOM.levelsListContainer.innerHTML = '<div style="font-size:12px; color:#55547a; text-align:center; padding:10px;">Нет кастомных уровней</div>'; 
             return; 
         } 
         levels.forEach((lvl, idx) => { 
@@ -193,14 +189,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.MenuEngine.initDOMRefs(); window.EditorEngine.initEditorEvents(); window.MenuEngine.renderSavedLevels();
     
-    // ПРОВЕРКА СОЗДАТЕЛЯ: Ищем параметр ?admin=mysecret123 в строке браузера
+    // ОТКРЫВАЕМ РЕДАКТОР ДЛЯ ВСЕХ: Любой зашедший игрок видит кнопку захода в конструктор уровней!
+    const editorBtn = document.getElementById('btnOpenEditor'); if (editorBtn) editorBtn.style.display = 'block';
+    const title = document.getElementById('customLevelsTitle'); if (title) title.style.display = 'block';
+
+    // СЕКРЕТ АДМИНА: Кнопка «ВЫЛОЖИТЬ ОФИЦИАЛЬНЫЙ» откроется только тебе по хвосту в адресе
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('admin') === 'mysecret123') {
-        // Открываем кнопку захода в редактор на главном экране
-        const editorBtn = document.getElementById('btnOpenEditor'); if (editorBtn) editorBtn.style.display = 'block';
-        const title = document.getElementById('customLevelsTitle'); if (title) title.style.display = 'block';
-        // Открываем кнопку публикации выкладывания на левой панели редактора
-        const publishBtn = document.getElementById('btnPublishOfficial'); if (publishBtn) publishBtn.style.display = 'block';
+    const publishBtn = document.getElementById('btnPublishOfficial'); 
+    if (publishBtn) {
+        publishBtn.style.display = (urlParams.get('admin') === 'mysecret123') ? 'block' : 'none';
     }
 
     const preloadEverything = async () => {
