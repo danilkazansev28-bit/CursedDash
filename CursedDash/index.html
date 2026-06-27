@@ -21,10 +21,9 @@
         
         <!-- Панель инструментов редактора -->
         <div id="editorPanel">
-             <button id="btnScrollLeft" style="background:#555; padding: 4px 8px; font-size:10px;">◀ Влево</button>
-<button id="btnScrollRight" style="background:#555; padding: 4px 8px; font-size:10px;">▶ Вправо</button>
-<div style="width: 2px; height: 20px; background: #555; margin: 0 4px;"></div>
-
+            <button id="btnScrollLeft" style="background:#555; padding: 4px 8px; font-size:10px;">◀ Влево</button>
+            <button id="btnScrollRight" style="background:#555; padding: 4px 8px; font-size:10px;">▶ Вправо</button>
+            <div style="width: 2px; height: 20px; background: #555; margin: 0 4px;"></div>
             <button id="toolSpikeFloor" class="tool-btn active">▲ Шип П</button>
             <button id="toolSpikeCeil" class="tool-btn">▼ Шип Пот</button>
             <button id="toolBlock" class="tool-btn">■ Блок</button>
@@ -50,8 +49,7 @@
             <div style="width: 2px; height: 20px; background: #555; margin: 0 4px;"></div>
             <button id="btnStartTest" style="background:#00ff88; color:#111; padding: 4px 8px; font-size:10px;">▶ Тест</button>
             <button id="btnSaveLevel" style="background:#00bfff; color:#111; padding: 4px 8px; font-size:10px;">💾 Сохр</button>
-            <button id="btnClearLevel" style="background:#555; padding: 4px 8px; font-size:10px;">Очистить</button>
-            <button id="btnEditorExit" style="background:#e94560; padding: 4px 8px; font-size:10px;">Выход</button>
+            <button id="btnEditExit" style="background:#e94560; padding: 4px 8px; font-size:10px;">Выход</button>
         </div>
 
         <!-- Главное Меню -->
@@ -81,7 +79,7 @@
             <button id="btnCloseSkins">Назад</button>
         </div>
 
-        <!-- Экран поражения (Плашка смерти) -->
+        <!-- Экран поражения -->
         <div id="gameOverScreen" class="screen" style="display: none;">
             <h1>ИГРА ОКОНЧЕНА</h1>
             <p style="margin-bottom: 15px; font-size: 18px; color: #ff5773;">Ваш прогресс: <span id="finalScore">0</span></p>
@@ -92,6 +90,7 @@
         </div>
     </div>
 
+    <!-- КРИТИЧЕСКИЙ ФИКС: Подключаем главный файл строго как модуль js/main.js -->
     <script src="js/main.js" type="module"></script>
 </body>
 </html>
