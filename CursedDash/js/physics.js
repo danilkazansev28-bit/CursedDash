@@ -63,13 +63,11 @@ window.PhysicsEngine = {
                 window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; 
             }
         } else {
-            // ФИКС ПЛАМЕНИ: Огонь теперь генерируется НЕПРЕРЫВНО в каждом кадре полета!
             if (window.Game.isHoldingAction) { 
                 window.Game.cubeVelocityY += window.Game.THRUST_SHIP; 
                 if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, true);
             } else { 
                 window.Game.cubeVelocityY += window.Game.GRAVITY_SHIP; 
-                // Создаем пламя, даже когда кнопка отпущена
                 if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, false);
             }
             window.Game.cubeVelocityY = Math.max(-6, Math.min(6, window.Game.cubeVelocityY)); window.Game.cubeY += window.Game.cubeVelocityY;
@@ -139,21 +137,16 @@ window.PhysicsEngine = {
                 } else { 
                     window.Game.currentMode = 'cube'; if (liveCube) liveCube.style.borderRadius = '4px'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
         
-        // ЖЕСТКИЙ АВТОНОМНЫЙ ФИКС ХИТБОКСА СКОРОСТИ
         for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
             const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
             if (sp.x < -50) { sp.element.remove(); window.Game.speedPortals.splice(i, 1); continue; } 
             
             let portalWidth = 25; 
             let portalHeight = 100; 
-            
-            // Заставляем движок принудительно перевести высоту в пиксельное число, чтобы убрать баг пролета под порталом
             let portalBottom = parseInt(sp.element.style.bottom || sp.bottom || 50, 10); 
             let portalTop = portalBottom + portalHeight;
 
             let isCollidingX = (cR >= sp.x && cL <= sp.x + portalWidth) || (cR + finalMovementSpeed >= sp.x && cL - finalMovementSpeed <= sp.x + portalWidth);
-            // Проверка строго внутри коридора [portalBottom, portalTop]. 
-            // Если игрок летит ПОД или НАД воротами — они его не заденут!
             let isCollidingY = (cT >= portalBottom && cB <= portalTop);
 
             if (isCollidingX && isCollidingY) { 
@@ -206,8 +199,9 @@ window.PhysicsEngine = {
     },
     clearGameContainer() { 
         window.Game.gameActive = false; const liveObjLayer = document.getElementById('objectsLayer'); if (liveObjLayer) liveObjLayer.innerHTML = ''; 
+        document.querySelectorAll('.particle').forEach(p => p.remove());
         window.Game.spikes = []; window.Game.portals = []; window.Game.speedPortals = []; window.Game.orbs = []; window.Game.pads = []; window.Game.solidBlocks = []; window.Game.particles = []; 
-        const liveContainer = document.getElementById('gameContainer'); if (liveContainer) liveContainer.style.backgroundColor = '#0a0813';
+        const liveContainer = document.getElementById('gameContainer'); if (liveContainer) { liveContainer.style.backgroundColor = '#0a0813'; liveContainer.style.filter = 'none'; }
     },
     initRestartSystem() { const liveRestartBtn = document.getElementById('restartBtn'); if (liveRestartBtn) { liveRestartBtn.replaceWith(liveRestartBtn.cloneNode(true)); document.getElementById('restartBtn').addEventListener('click', () => { const liveOverScreen = document.getElementById('gameOverScreen'); if (liveOverScreen) liveOverScreen.style.display = 'none'; this.resetGame(); }); } }
 };
