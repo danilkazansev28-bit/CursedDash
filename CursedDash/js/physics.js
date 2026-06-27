@@ -58,7 +58,17 @@ window.PhysicsEngine = {
 
         if (window.Game.currentMode === 'cube') {
             window.Game.cubeVelocityY += window.Game.GRAVITY_CUBE; window.Game.cubeY += window.Game.cubeVelocityY;
-            if (window.Game.cubeY >= 0) { window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; window.Game.rotation = window.Game.targetRotation; }
+            
+            // ЛОВИМ ПРИЗЕМЛЕНИЕ НА ПОЛ: Если кубик падал и коснулся земли (y >= 0)
+            if (window.Game.cubeY >= 0) { 
+                if (!window.Game.isGrounded && window.Game.cubeVelocityY > 2) {
+                    if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) {
+                        window.EffectsEngine.createLandSmoke(100, 50); // Выпускаем пыль на полу
+                    }
+                }
+                window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; window.Game.rotation = window.Game.targetRotation; 
+            }
+            
             if (!window.Game.isGrounded && window.Game.rotation < window.Game.targetRotation) { 
                 window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; 
             }
@@ -115,6 +125,14 @@ window.PhysicsEngine = {
             if (cR > b.x && cL < b.x + b.width && cT > b.bottom && cB < b.bottom + b.height) {
                 const overlapY = cB - (b.bottom + b.height);
                 if (window.Game.cubeVelocityY >= 0 && overlapY >= -12) {
+                    
+                    // ЛОВУШКА ПРИЗЕМЛЕНИЯ НА БЛОК: Выпускаем пыль, если кубик жестко упал на блок сверху
+                    if (!window.Game.isGrounded && window.Game.cubeVelocityY > 2) {
+                        if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) {
+                            window.EffectsEngine.createLandSmoke(100, b.bottom + b.height);
+                        }
+                    }
+                    
                     window.Game.cubeY = 50 - (b.bottom + b.height); window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; standingOnBlock = true; window.Game.rotation = window.Game.targetRotation;
                 } else { if (cR - p > b.x && cL + p < b.x + b.width && window.Game.spawnProtectionFrames === 0) { window.MenuEngine.gameOver(); } }
             }
@@ -145,7 +163,7 @@ window.PhysicsEngine = {
                     window.Game.currentMode = 'ship'; if (liveCube) liveCube.style.borderRadius = '50% 10px 10px 50%'; 
                 } else { 
                     window.Game.currentMode = 'cube'; if (liveCube) liveCube.style.borderRadius = '4px'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
-        
+// js/physics.js - Часть 4 из 4
         for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
             const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
             sp.element.style.backgroundImage = "url('./assets/images/speed.png'), url('CursedDash/assets/images/speed.png')"; sp.element.style.backgroundSize = 'cover'; sp.element.style.backgroundColor = 'transparent';
@@ -173,10 +191,9 @@ window.PhysicsEngine = {
             if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } 
             if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } } 
         }
-        if (window.EffectsEngine) window.EffectsEngine.updateParticles(); 
+        if (window.Game.animationFrameId) cancelAnimationFrame(window.Game.animationFrameId);
         window.Game.animationFrameId = requestAnimationFrame(() => this.update());
     },
-// js/physics.js - Часть 4 из 4
     resetGame() {
         if (window.Game.animationFrameId) { cancelAnimationFrame(window.Game.animationFrameId); window.Game.animationFrameId = null; }
         window.Game.gameActive = false; this.clearGameContainer(); 
@@ -207,6 +224,7 @@ window.PhysicsEngine = {
         window.Game.gameActive = true; 
         if (window.Game.toggleSkins && window.Game.applySkin) window.Game.applySkin();
         if (window.AudioEngine) window.AudioEngine.startMusic();
+        if (window.Game.animationFrameId) cancelAnimationFrame(window.Game.animationFrameId);
         window.Game.animationFrameId = requestAnimationFrame(() => this.update());
     },
     clearGameContainer() { 
