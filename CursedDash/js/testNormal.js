@@ -23,7 +23,13 @@ if (!window.NormalLevelEngine) {
                     if (rand < 0.1) {
                         const pEl = document.createElement('div'); pEl.className = 'portal'; pEl.style.left = startX + 'px'; pEl.style.bottom = (window.Game.currentMode === 'cube' ? '50px' : '150px'); liveObjLayer.appendChild(pEl); window.Game.portals.push({ element: pEl, x: startX, width: 35, height: 95, bottom: (window.Game.currentMode === 'cube' ? 50 : 150) });
                     } else if (rand < 0.16) {
-                        const types = ['speed-slow', 'speed-normal', 'speed-fast'], t = types[Math.floor(Math.random() * 3)], spEl = document.createElement('div'); spEl.className = `speed-portal ${t}`; spEl.style.left = startX + 'px'; liveObjLayer.appendChild(spEl); window.Game.speedPortals.push({ element: spEl, x: startX, type: t, width: 25, height: 100, bottom: 50 });
+                        const types = ['speed-slow', 'speed-normal', 'speed-fast'], t = types[Math.floor(Math.random() * 3)], spEl = document.createElement('div'); spEl.className = `speed-portal ${t}`; spEl.style.left = startX + 'px'; 
+                        
+                        // КРИТИЧЕСКИЙ ФИКС: Жестко прописываем координату bottom прямо в стили элемента, чтобы physics.js видел её как число!
+                        spEl.style.bottom = '50px'; 
+                        liveObjLayer.appendChild(spEl); 
+                        
+                        window.Game.speedPortals.push({ element: spEl, x: startX, type: t, width: 25, height: 100, bottom: 50 });
                     } else if (rand < 0.25) {
                         const types = ['orb-purple', 'orb-pink', 'orb-red'], t = types[Math.floor(Math.random() * 3)], oEl = document.createElement('div'); oEl.className = `orb ${t}`; oEl.style.left = startX + 'px'; const b = Math.random() * 80 + 100; oEl.style.bottom = b + 'px'; liveObjLayer.appendChild(oEl); window.Game.orbs.push({ element: oEl, type: t, x: startX, width: 30, height: 30, bottom: b });
                     } else if (rand < 0.35) {
