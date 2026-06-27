@@ -30,6 +30,7 @@ window.MenuEngine = {
         };
     },
 
+    // Автоматически закрывает все окна и включает только нужное, убирая кашу в меню
     switchScreen(activeScreenKey) {
         this.initDOMRefs();
         const allScreens = {
@@ -128,6 +129,7 @@ window.MenuEngine = {
         window.Game.currentLevel = lvl; 
         window.Game.isTestingCustom = false; 
         window.Game.isEditorMode = false; 
+        window.Game.isHoldingAction = false; // ЖЕСТКО СКИНУЛИ ДУБЛЬ КЛИКА ПРИ ЗАПУСКЕ УРОВНЯ
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'block'; 
         if (window.AudioEngine) window.AudioEngine.initAudio(); 
@@ -137,6 +139,7 @@ window.MenuEngine = {
         this.switchScreen('none');
         window.Game.isEditorMode = false; 
         window.Game.isTestingCustom = true; 
+        window.Game.isHoldingAction = false; // ЖЕСТКО СКИНУЛИ ДУБЛЬ КЛИКА ПРИ ЗАПУСКЕ ТЕСТА
         window.Game.currentLevel = 'custom'; 
         if (window.Game.DOM.scoreBoard) window.Game.DOM.scoreBoard.style.display = 'block'; 
         if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'block'; 
@@ -150,6 +153,7 @@ window.MenuEngine = {
         if (window.Game.DOM.stopTestBtn) window.Game.DOM.stopTestBtn.style.display = 'none'; 
         if (window.Game.DOM.progressBarContainer) window.Game.DOM.progressBarContainer.style.display = 'none'; 
         window.PhysicsEngine.clearGameContainer(); 
+        window.Game.isHoldingAction = false;
         
         if (window.Game.isTestingCustom) { 
             window.Game.isTestingCustom = false; 
@@ -172,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const gameBox = document.getElementById('gameContainer');
     if (gameBox && !document.getElementById('loadingScreen')) {
         const loadScreen = document.createElement('div'); loadScreen.id = 'loadingScreen';
-        loadScreen.innerHTML = `<div class="loader-title">CURSED DASH</div><div class="loader-bar"><div id="loaderFill"></div></div><div id="loaderText">Загрузка ресурсов движка...</div>`;
+        loadScreen.innerHTML = `<div class="loader-title">CURSED DASH</div><div class="loader-bar"><div id="loaderFill"></div></div><div id="loaderText">Загрузка ресурсов...</div>`;
         gameBox.appendChild(loadScreen);
     }
 
@@ -224,41 +228,36 @@ document.addEventListener("DOMContentLoaded", () => {
     bindClick('btnGameOverExit', () => window.MenuEngine.backToMenu());
     if (window.Game.DOM.stopTestBtn) { window.Game.DOM.stopTestBtn.addEventListener('click', () => window.MenuEngine.backToMenu()); }
     
-    bindClick('toolSpikeFloor', () => window.EditorEngine.setTool('spike-floor'));
-    bindClick('toolSpikeCeil', () => window.EditorEngine.setTool('spike-ceil'));
-    bindClick('toolBlock', () => window.EditorEngine.setTool('solid-block'));
-    bindClick('toolPortal', () => window.EditorEngine.setTool('portal'));
-    bindClick('toolOrbPurple', () => window.EditorEngine.setTool('orb-purple'));
-    bindClick('toolOrbPink', () => window.EditorEngine.setTool('orb-pink'));
-    bindClick('toolOrbRed', () => window.EditorEngine.setTool('orb-red'));
-    bindClick('toolPadYellow', () => window.EditorEngine.setTool('pad-yellow'));
-    bindClick('toolPink', () => window.EditorEngine.setTool('pad-pink'));
-    bindClick('toolPadRed', () => window.EditorEngine.setTool('pad-red'));
-    bindClick('toolSlow', () => window.EditorEngine.setTool('speed-slow'));
-    bindClick('toolNorm', () => window.EditorEngine.setTool('speed-normal'));
-    bindClick('toolFast', () => window.EditorEngine.setTool('speed-fast'));
-    bindClick('toolEraser', () => window.EditorEngine.setTool('eraser'));
-    
-    // ДОБАВЛЯЕМ КНОПКУ ПЕРЕКЛЮЧЕНИЯ ХИТБОКСОВ ИЗ МЕНЮ СКИНОВ/НАСТРОЕК
-    bindClick('btnToggleHitboxMenu', () => {
-        window.Game.showHitboxes = !window.Game.showHitboxes;
-        alert(window.Game.showHitboxes ? "Хитбоксы включены! (Клавиша H)" : "Хитбоксы выключены!");
-    });
-
     window.Game.toggleSkins = function(show) { window.MenuEngine.switchScreen(show ? 'skins' : 'mainMenu'); };
     window.Game.selectSkin = function(idx, el) { window.Game.selectedSkinIndex = idx; document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); window.Game.applySkin(); };
     window.Game.applySkin = function() { window.MenuEngine.initDOMRefs(); if (!window.Game.DOM.cube) return; const s = window.Game.SKINS[window.Game.selectedSkinIndex]; window.Game.DOM.cube.style.background = s.bg; window.Game.DOM.cube.textContent = s.text; window.Game.DOM.cube.style.display = 'flex'; };
     
+    // ИЗОЛЯЦИЯ ВВОДА: Кубик слушает прыжки ТОЛЬКО из этого одного центрального блока!
     window.addEventListener('keydown', (e) => { 
-        if (e.code === 'Space') { e.preventDefault(); window.PhysicsEngine.pressAction(); }
-        // ГЛОБАЛЬНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ХИТБОКСОВ ПО НАЖАТИЮ "H" ИЛИ "Р"
-        if (e.code === 'KeyH') {
-            window.Game.showHitboxes = !window.Game.showHitboxes;
-            console.log("Отображение хитбоксов:", window.Game.showHitboxes);
+        if (e.code === 'Space') { 
+            e.preventDefault(); 
+            if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.pressAction(); 
         }
+        // Переключение хитбоксов на английскую H (или русскую Р)
+        if (e.code === 'KeyH') { window.Game.showHitboxes = !window.Game.showHitboxes; }
     });
-    window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); window.PhysicsEngine.releaseAction(); } });
-    window.addEventListener('mousedown', (e) => { if (window.Game.isEditorMode) return; if (!e.target.closest('#editorPanel') && !e.target.closest('button')) { window.AudioEngine.initAudio(); window.PhysicsEngine.pressAction(); } });
-    window.addEventListener('mouseup', () => { if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); });
-    if (window.PhysicsEngine && window.PhysicsEngine.initRestartSystem) { window.PhysicsEngine.initRestartSystem(); }
+    window.addEventListener('keyup', (e) => { 
+        if (e.code === 'Space') { 
+            e.preventDefault(); 
+            if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); 
+        } 
+    });
+    
+    window.Game.DOM.container.addEventListener('mousedown', (e) => { 
+        if (!window.Game.gameActive || window.Game.isEditorMode) return; 
+        // ЗАПРЕТ ПРЫЖКА ПРИ КЛИКАХ В МЕНЮ: Клик по кнопкам больше не взводит флаг вечного прыжка!
+        if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel') || e.target.closest('#mainMenuScreen') || e.target.closest('#gameOverScreen')) return;
+        
+        window.AudioEngine.initAudio(); 
+        window.PhysicsEngine.pressAction(); 
+    });
+    
+    window.addEventListener('mouseup', () => { 
+        if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); 
+    });
 });
