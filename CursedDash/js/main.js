@@ -179,6 +179,14 @@ window.MenuEngine = {
 };
 // js/main.js - Часть 4 из 4
 document.addEventListener("DOMContentLoaded", () => {
+    // ЖЕСТКИЙ ВОЗВРАТ ЗАГРУЗОЧНОГО ЭКРАНА: Создаем его принудительно, пока идет прелоад ресурсов!
+    const gameBox = document.getElementById('gameContainer');
+    if (gameBox && !document.getElementById('loadingScreen')) {
+        const loadScreen = document.createElement('div'); loadScreen.id = 'loadingScreen';
+        loadScreen.innerHTML = `<div class="loader-title">CURSED DASH</div><div class="loader-bar"><div id="loaderFill"></div></div><div id="loaderText">Загрузка ресурсов движка...</div>`;
+        gameBox.appendChild(loadScreen);
+    }
+
     window.MenuEngine.initDOMRefs(); window.EditorEngine.initEditorEvents(); window.MenuEngine.renderSavedLevels();
     
     const editorBtn = document.getElementById('btnOpenEditor'); if (editorBtn) editorBtn.style.display = 'block';
@@ -188,6 +196,38 @@ document.addEventListener("DOMContentLoaded", () => {
     if (publishBtn) {
         publishBtn.style.display = (urlParams.get('admin') === 'mysecret123') ? 'block' : 'none';
     }
+
+    // КРАСИВЫЙ И ПЛАВНЫЙ АНИМИРОВАННЫЙ ПРЕЛОАДЕР РЕСУРСОВ
+    const preloadEverything = async () => {
+        const images = ['block.png', 'cube.png', 'portal.png', 'ship.png', 'speed.png', 'spike.png'];
+        const tracks = ['bozza.mp3', 'subscribe.mp3', 'bob.mp3'];
+        const total = images.length + tracks.length; let loadedCount = 0;
+
+        const updateBar = (name) => {
+            loadedCount++; let pct = Math.floor((loadedCount / total) * 100);
+            const fill = document.getElementById('loaderFill'), txt = document.getElementById('loaderText');
+            if(fill) fill.style.width = pct + '%'; if(txt) txt.textContent = `Загрузка: ${name} (${pct}%)`;
+        };
+
+        for(let img of images) {
+            await new Promise(r => {
+                const i = new Image(); i.src = `assets/images/${img}`;
+                i.onload = () => { updateBar(img); r(); }; i.onerror = () => { updateBar(img + ' (Заглушка)'); r(); }; 
+            });
+        }
+        for(let track of tracks) {
+            await new Promise(async (r) => {
+                let trackLoaded = false; setTimeout(() => { if(!trackLoaded) r(); }, 600);
+                try { if(window.AudioEngine && window.AudioEngine.loadTrackPromise) await window.AudioEngine.loadTrackPromise(track); } catch(err) {}
+                trackLoaded = true; updateBar(track); r();
+            });
+        }
+        setTimeout(() => {
+            const ls = document.getElementById('loadingScreen'); if(ls) ls.remove();
+            window.MenuEngine.switchScreen('mainMenu'); 
+        }, 300);
+    };
+    preloadEverything();
 
     const bindClick = (id, action) => { try { const el = document.getElementById(id); if (el) el.addEventListener('click', (e) => { e.stopPropagation(); action(); }); } catch(e){} };
     bindClick('btnPlayLvl1', () => window.MenuEngine.startGame(1));
@@ -210,13 +250,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
     window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.pressAction(); } if (e.code === 'KeyH') { window.Game.showHitboxes = !window.Game.showHitboxes; } });
     window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); } });
-    
-    // ЖЕСТКИЙ ФИКС ОГРАНИЧЕНИЯ МЫШКИ: Разрешаем кликать по кнопкам объектов нижней панели!
-    window.Game.DOM.container.addEventListener('mousedown', (e) => { 
-        if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel') || e.target.closest('#mainMenuScreen') || e.target.closest('#gameOverScreen')) return;
-        if (!window.Game.gameActive || window.Game.isEditorMode) return; 
-        window.AudioEngine.initAudio(); 
-        window.PhysicsEngine.pressAction(); 
-    });
+    window.Game.DOM.container.addEventListener('mousedown', (e) => { if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel') || e.target.closest('#mainMenuScreen') || e.target.closest('#gameOverScreen')) return; if (!window.Game.gameActive || window.Game.isEditorMode) return; window.AudioEngine.initAudio(); window.PhysicsEngine.pressAction(); });
     window.addEventListener('mouseup', () => { if (window.Game.gameActive && !window.Game.isEditorMode) window.PhysicsEngine.releaseAction(); });
 });
