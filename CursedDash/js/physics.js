@@ -63,11 +63,14 @@ window.PhysicsEngine = {
                 window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; 
             }
         } else {
+            // ИСПРАВЛЕНИЕ ОГНЯ: Огонь создается ВСЕГДА, пока мы летим на кораблике!
             if (window.Game.isHoldingAction) { 
                 window.Game.cubeVelocityY += window.Game.THRUST_SHIP; 
                 if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY);
             } else { 
                 window.Game.cubeVelocityY += window.Game.GRAVITY_SHIP; 
+                // Когда Пробел отпущен, огонь идет, но чуть реже (Math.random для оптимизации)
+                if (window.EffectsEngine && Math.random() < 0.6) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY);
             }
             window.Game.cubeVelocityY = Math.max(-6, Math.min(6, window.Game.cubeVelocityY)); window.Game.cubeY += window.Game.cubeVelocityY;
             if (window.Game.cubeY >= 0) { window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; }
@@ -87,7 +90,6 @@ window.PhysicsEngine = {
         const liveProgText = document.getElementById('progressText');
         const liveProgFill = document.getElementById('progressBarFill');
 
-        // Перенаправляем расчеты в наши два новых независимых скрипта без багов
         if (window.Game.isTestingCustom) {
             if (window.CustomTestEngine && window.CustomTestEngine.handleProgress(finalMovementSpeed, liveProgText, liveProgFill)) return;
             if (window.CustomTestEngine) window.CustomTestEngine.handleSpawning();
@@ -136,7 +138,23 @@ window.PhysicsEngine = {
                     window.Game.currentMode = 'ship'; if (liveCube) liveCube.style.borderRadius = '50% 10px 10px 50%'; 
                 } else { 
                     window.Game.currentMode = 'cube'; if (liveCube) liveCube.style.borderRadius = '4px'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
-        for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; if (sp.x < -50) { sp.element.remove(); window.Game.speedPortals.splice(i, 1); continue; } if (cR > sp.x && cL < sp.x + sp.width && cT > sp.bottom && cB < sp.bottom + sp.height) { window.AudioEngine.playPortalSound(); sp.element.remove(); window.Game.speedPortals.splice(i, 1); if (sp.type === 'speed-slow') window.Game.currentSpeedMultiplier = 0.65; if (sp.type === 'speed-normal') window.Game.currentSpeedMultiplier = 1.0; if (sp.type === 'speed-fast') window.Game.currentSpeedMultiplier = 1.5; } }
+        
+        // ИСПРАВЛЕНИЕ ХИТБОКСОВ СКОРОСТИ: Теперь коллизия работает пиксель-в-пиксель!
+        for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
+            const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
+            if (sp.x < -50) { sp.element.remove(); window.Game.speedPortals.splice(i, 1); continue; } 
+            
+            // Жесткое пересечение хитбокса кубика (cL, cR, cB, cT) с хитбоксом стрелочек скорости (Ширина: 25, Высота: 100)
+            if (cR > sp.x && cL < sp.x + 25 && cT > sp.bottom && cB < sp.bottom + 100) { 
+                window.AudioEngine.playPortalSound(); 
+                if (sp.type.includes('slow')) window.Game.currentSpeedMultiplier = 0.65;
+                else if (sp.type.includes('fast')) window.Game.currentSpeedMultiplier = 1.5;
+                else window.Game.currentSpeedMultiplier = 1.0;
+                
+                sp.element.remove(); window.Game.speedPortals.splice(i, 1);
+            } 
+        }
+        
         let insideAnyOrb = false; for (let i = window.Game.orbs.length - 1; i >= 0; i--) { const ob = window.Game.orbs[i]; ob.x -= finalMovementSpeed; ob.element.style.left = ob.x + 'px'; if (ob.x < -50) { ob.element.remove(); window.Game.orbs.splice(i, 1); continue; } if (cR > ob.x && cL < ob.x + ob.width && cB < ob.bottom + ob.height && cT > ob.bottom) { insideAnyOrb = true; window.Game.activeOrbIndex = i; } } window.Game.isInsideOrb = insideAnyOrb; if (!window.Game.isInsideOrb) window.Game.activeOrbIndex = -1;
         for (let i = window.Game.spikes.length - 1; i >= 0; i--) { const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } } }
         if (window.EffectsEngine) window.EffectsEngine.updateParticles(); 
