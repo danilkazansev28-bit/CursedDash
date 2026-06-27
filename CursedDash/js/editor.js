@@ -2,38 +2,24 @@
 if (!window.EditorEngine) {
     window.EditorEngine = {
         openEditor() { 
-            if (window.MenuEngine && window.MenuEngine.switchScreen) {
-                window.MenuEngine.switchScreen('editor');
-            }
+            if (window.MenuEngine && window.MenuEngine.switchScreen) { window.MenuEngine.switchScreen('editor'); }
             window.Game.DOM.stopTestBtn.style.display = 'none'; 
             window.Game.DOM.progressBarContainer.style.display = 'none'; 
-            window.Game.isEditorMode = true; 
-            window.Game.isMouseOverPanel = false; 
+            window.Game.isEditorMode = true; window.Game.isMouseOverPanel = false; 
             window.PhysicsEngine.clearGameContainer(); 
             
-            const oldInput = document.getElementById('customMp3UrlInput'); if (oldInput) oldInput.remove();
-            const oldFileInput = document.getElementById('customMp3FileInput'); if (oldFileInput) oldFileInput.remove();
-            const oldFileLabel = document.getElementById('customMp3FileLabel'); if (oldFileLabel) oldFileLabel.remove();
-
             if (!document.getElementById('musicSliderContainer')) {
-                const sliderContainer = document.createElement('div');
-                sliderContainer.id = 'musicSliderContainer';
+                const sliderContainer = document.createElement('div'); sliderContainer.id = 'musicSliderContainer';
                 sliderContainer.style.cssText = 'display:flex; align-items:center; background:#1a1a24; border:1px solid #444; padding:4px; border-radius:4px; width:95px; box-sizing:border-box; justify-content:space-between;';
-
                 const btnPrev = document.createElement('button'); btnPrev.textContent = '◀'; btnPrev.style.cssText = 'background:#333; color:#fff; border:none; font-size:9px; padding:2px 4px; cursor:pointer; border-radius:2px;';
                 const trackNameLabel = document.createElement('span'); trackNameLabel.id = 'editorMusicTrackName'; trackNameLabel.style.cssText = 'color:#00ff88; font-size:9px; font-weight:bold; max-width:55px; overflow:hidden; text-overflow:ellipsis; text-align:center; display:inline-block; font-family:monospace; white-space:nowrap;';
                 const btnNext = document.createElement('button'); btnNext.textContent = '▶'; btnNext.style.cssText = 'background:#333; color:#fff; border:none; font-size:9px; padding:2px 4px; cursor:pointer; border-radius:2px;';
 
-                const updateTrackLabel = () => {
-                    const currentTrack = window.Game.MUSIC_TRACKS[window.Game.selectedTrackIndex];
-                    trackNameLabel.textContent = currentTrack ? currentTrack.name : "Мьюзик";
-                };
+                const updateTrackLabel = () => { const currentTrack = window.Game.MUSIC_TRACKS[window.Game.selectedTrackIndex]; trackNameLabel.textContent = currentTrack ? currentTrack.name : "Мьюзик"; };
                 btnPrev.addEventListener('click', (e) => { e.stopPropagation(); window.Game.selectedTrackIndex = (window.Game.selectedTrackIndex - 1 + window.Game.MUSIC_TRACKS.length) % window.Game.MUSIC_TRACKS.length; updateTrackLabel(); });
                 btnNext.addEventListener('click', (e) => { e.stopPropagation(); window.Game.selectedTrackIndex = (window.Game.selectedTrackIndex + 1) % window.Game.MUSIC_TRACKS.length; updateTrackLabel(); });
-
                 sliderContainer.appendChild(btnPrev); sliderContainer.appendChild(trackNameLabel); sliderContainer.appendChild(btnNext);
-                const leftPanel = document.getElementById('editorLeftPanel');
-                if (leftPanel) { leftPanel.appendChild(sliderContainer); }
+                const leftPanel = document.getElementById('editorLeftPanel'); if (leftPanel) { leftPanel.appendChild(sliderContainer); }
                 updateTrackLabel();
             } else {
                 const label = document.getElementById('editorMusicTrackName'); if (label) label.textContent = window.Game.MUSIC_TRACKS[window.Game.selectedTrackIndex].name;
@@ -63,31 +49,30 @@ if (!window.EditorEngine) {
             if(toolsMap[tool] && document.getElementById(toolsMap[tool])) { document.getElementById(toolsMap[tool]).classList.add('active'); }
         },
 // js/editor.js - Часть 3 из 4
-        // Эта функция СОХРАНИТЬ работает у ВСЕХ игроков на планете для их личных черновиков
         saveCustomLevelPrompt() { 
             if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой уровень!"); return; } 
-            const name = prompt("Введите название кастомного уровня:", "Мой кастом " + (this.getSavedLevels().length + 1)); 
+            const name = prompt("Введите название уровня:", "Кастом " + (this.getSavedLevels().length + 1)); 
             if (!name) return; 
             const levels = this.getSavedLevels();
             const dataToSave = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height })); 
             levels.push({ name: name, objects: dataToSave, selectedTrackIndex: window.Game.selectedTrackIndex }); 
             localStorage.setItem('gd_custom_levels', JSON.stringify(levels)); 
             window.MenuEngine.renderSavedLevels(); 
-            alert("Уровень добавлен в список кастомных карт на главную страницу!"); 
+            alert("Черновик успешно сохранен!"); 
         },
         getSavedLevels() { const data = localStorage.getItem('gd_custom_levels'); return data ? JSON.parse(data) : []; },
         clearCustomLevel() { window.Game.customObjects.forEach(obj => { if(obj.element) obj.element.remove(); }); window.Game.customObjects = []; },
 // js/editor.js - Часть 4 из 4
-        // ЖЕЛЕЗНЫЙ ФИКС ВЫКЛАДЫВАНИЯ НА ГЛАВНУЮ: Твоя золотая кнопка
+        // МЕГА-ФИКС ДЛЯ ВЫКЛАДЫВАНИЯ: Превращаем массив в чистую JSON строку, убирая пустые баги!
         publishOfficialLevel() {
             if (window.Game.customObjects.length === 0) { alert("Нельзя выложить пустую карту!"); return; }
-            const lvlNum = prompt("На место какого Официального Уровня выложить карту? (Введите 1, 2 или 3):", "1");
+            const lvlNum = prompt("На место какого Официального Уровня выложить карту? (Введите число 1, 2 или 3):", "1");
             if (lvlNum !== "1" && lvlNum !== "2" && lvlNum !== "3") { alert("Введите только 1, 2 или 3!"); return; }
             
-            const dataToPublish = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height }));
-            // Записываем в глобальную базу официальных уровней
+            const dataToPublish = window.Game.customObjects.map(o => ({ type: o.type, x: parseInt(o.x, 10), bottom: parseInt(o.bottom, 10), width: parseInt(o.width, 10), height: parseInt(o.height, 10) }));
+            // Жестко фиксируем строку JSON в память
             localStorage.setItem(`gd_official_level_${lvlNum}`, JSON.stringify(dataToPublish));
-            alert(`Успешно! Ты опубликовал карту как Официальный Уровень ${lvlNum}. Теперь кнопка Уровень ${lvlNum} на главной будет запускать твой дизайн!`);
+            alert(`Уровень успешно ОПУБЛИКОВАН на место Официального Уровня ${lvlNum}! Переходи на главную страницу и проверяй!`);
         },
 
         initEditorEvents() {
@@ -97,16 +82,16 @@ if (!window.EditorEngine) {
                 window.Game.DOM.editorPanel.addEventListener('mouseleave', () => { window.Game.isMouseOverPanel = false; });
             }
             const scrLeft = document.getElementById('btnScrollLeft'), scrRight = document.getElementById('btnScrollRight');
-            if(scrLeft) scrLeft.addEventListener('click', () => { window.Game.editorScrollX = Math.max(0, window.Game.editorScrollX - 120); this.updateEditorView(); });
-            if(scrRight) scrRight.addEventListener('click', () => { window.Game.editorScrollX += 120; this.updateEditorView(); });
+            if(scrLeft) scrLeft.addEventListener('click', (e) => { e.stopPropagation(); window.Game.editorScrollX = Math.max(0, window.Game.editorScrollX - 120); this.updateEditorView(); });
+            if(scrRight) scrRight.addEventListener('click', (e) => { e.stopPropagation(); window.Game.editorScrollX += 120; this.updateEditorView(); });
             
-            const pubBtn = document.getElementById('btnPublishOfficial');
-            if (pubBtn) pubBtn.addEventListener('click', () => this.publishOfficialLevel());
+            const pubBtn = document.getElementById('btnPublishOfficial'); if (pubBtn) pubBtn.addEventListener('click', () => this.publishOfficialLevel());
 
+            // ЖЕСТКИЙ ФИКС НАЖАТИЯ ПО СЕТКЕ: Указываем кнопкам выбора объектов приоритет
             window.Game.DOM.container.addEventListener('mousedown', (e) => {
-                if (e.target && (e.target.closest('#musicSliderContainer') || e.target.id === 'editorMusicTrackName')) return;
-                e.preventDefault(); 
-                if (!window.Game.isEditorMode || window.Game.isMouseOverPanel || e.target === window.Game.DOM.stopTestBtn || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel')) return;
+                if (e.target.closest('button') || e.target.closest('#editorPanel') || e.target.closest('#editorLeftPanel')) return;
+                if (!window.Game.isEditorMode || window.Game.isMouseOverPanel) return;
+                e.preventDefault();
                 
                 const rect = window.Game.DOM.container.getBoundingClientRect(); 
                 let clickX = e.clientX - rect.left, clickY = e.clientY - rect.top, globalX = clickX + window.Game.editorScrollX;
