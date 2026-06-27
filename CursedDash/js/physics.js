@@ -1,9 +1,11 @@
 // js/physics.js - Часть 1 из 4
 import './state.js';
 import './audio.js';
+
+// ЖЕСТКИЙ ФИКС: Указываем браузеру искать файлы в текущей папке js через относительный путь
 import './testNormal.js';
 import './testCustom.js';
-import './effects.js'; // Наш новый модуль эффектов!
+import './effects.js';
 
 window.PhysicsEngine = {
     pressAction() { 
@@ -65,7 +67,6 @@ window.PhysicsEngine = {
         } else {
             if (window.Game.isHoldingAction) { 
                 window.Game.cubeVelocityY += window.Game.THRUST_SHIP; 
-                // Вызов шлейфа из нового чистого графического скрипта
                 if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY);
             } else { 
                 window.Game.cubeVelocityY += window.Game.GRAVITY_SHIP; 
@@ -89,15 +90,22 @@ window.PhysicsEngine = {
         const liveProgFill = document.getElementById('progressBarFill');
 
         if (window.Game.isTestingCustom) {
-            if (window.CustomTestEngine.handleProgress(finalMovementSpeed, liveProgText, liveProgFill)) return;
-            window.CustomTestEngine.handleSpawning();
+            if (window.CustomTestEngine && window.CustomTestEngine.handleProgress(finalMovementSpeed, liveProgText, liveProgFill)) return;
+            if (window.CustomTestEngine) window.CustomTestEngine.handleSpawning();
         } else {
-            if (window.NormalLevelEngine.handleProgress(finalMovementSpeed, liveProgText, liveProgFill)) return;
-            window.NormalLevelEngine.handleSpawning();
+            if (window.NormalLevelEngine && window.NormalLevelEngine.handleProgress(finalMovementSpeed, liveProgText, liveProgFill)) return;
+            if (window.NormalLevelEngine) window.NormalLevelEngine.handleSpawning();
         }
 
-        // Вызов светомузыки фона из нового графического скрипта
-        if (window.EffectsEngine) window.EffectsEngine.updateBackgroundPulse();
+        if (window.Game.bgPulseIntensity > 0) window.Game.bgPulseIntensity -= 0.04;
+        const liveContainer = document.getElementById('gameContainer');
+        if (liveContainer && window.Game.currentMusicFreq > 0) {
+            let hue = Math.floor((window.Game.currentMusicFreq % 200) + 200); 
+            let brightness = Math.floor(8 + window.Game.bgPulseIntensity * 16); 
+            liveContainer.style.backgroundColor = `hsl(${hue}, 65%, ${brightness}%)`;
+        } else if (liveContainer) {
+            liveContainer.style.backgroundColor = '#0a0813';
+        }
 // js/physics.js - Часть 3 из 4
         const cL = 100, cR = 140, cB = 50 - window.Game.cubeY, cT = cB + window.Game.CUBE_SIZE, p = 5;
         let standingOnBlock = false; if (window.Game.cubeY === 0) { window.Game.isGrounded = true; } else { window.Game.isGrounded = false; }
