@@ -18,28 +18,33 @@ if (!window.EditorEngine) {
             if (!document.getElementById('musicSliderContainer')) {
                 const sliderContainer = document.createElement('div');
                 sliderContainer.id = 'musicSliderContainer';
-                sliderContainer.style.cssText = 'display:flex; align-items:center; background:#1a1a24; border:1px solid #444; padding:2px 6px; border-radius:4px; margin:0 4px;';
+                sliderContainer.style.cssText = 'display:flex; align-items:center; background:#1a1a24; border:1px solid #444; padding:4px; border-radius:4px; width:95px; box-sizing:border-box; justify-content:space-between;';
 
-                const btnPrev = document.createElement('button'); btnPrev.textContent = '◀'; btnPrev.style.cssText = 'background:#333; color:#fff; border:none; font-size:10px; padding:2px 4px; cursor:pointer; border-radius:2px;';
-                const trackNameLabel = document.createElement('span'); trackNameLabel.id = 'editorMusicTrackName'; trackNameLabel.style.cssText = 'color:#00ff88; font-size:10px; font-weight:bold; min-width:90px; text-align:center; display:inline-block; font-family:monospace; margin:0 4px;';
-                const btnNext = document.createElement('button'); btnNext.textContent = '▶'; btnNext.style.cssText = 'background:#333; color:#fff; border:none; font-size:10px; padding:2px 4px; cursor:pointer; border-radius:2px;';
+                const btnPrev = document.createElement('button'); btnPrev.textContent = '◀'; btnPrev.style.cssText = 'background:#333; color:#fff; border:none; font-size:9px; padding:2px 4px; cursor:pointer; border-radius:2px;';
+                const trackNameLabel = document.createElement('span'); trackNameLabel.id = 'editorMusicTrackName'; trackNameLabel.style.cssText = 'color:#00ff88; font-size:9px; font-weight:bold; max-width:55px; overflow:hidden; text-overflow:ellipsis; text-align:center; display:inline-block; font-family:monospace; white-space:nowrap;';
+                const btnNext = document.createElement('button'); btnNext.textContent = '▶'; btnNext.style.cssText = 'background:#333; color:#fff; border:none; font-size:9px; padding:2px 4px; cursor:pointer; border-radius:2px;';
 
                 const updateTrackLabel = () => {
                     const currentTrack = window.Game.MUSIC_TRACKS[window.Game.selectedTrackIndex];
-                    trackNameLabel.textContent = currentTrack ? currentTrack.name : "Без музыки";
+                    trackNameLabel.textContent = currentTrack ? currentTrack.name : "Мьюзик";
                 };
                 btnPrev.addEventListener('click', (e) => { e.stopPropagation(); window.Game.selectedTrackIndex = (window.Game.selectedTrackIndex - 1 + window.Game.MUSIC_TRACKS.length) % window.Game.MUSIC_TRACKS.length; updateTrackLabel(); });
                 btnNext.addEventListener('click', (e) => { e.stopPropagation(); window.Game.selectedTrackIndex = (window.Game.selectedTrackIndex + 1) % window.Game.MUSIC_TRACKS.length; updateTrackLabel(); });
 
                 sliderContainer.appendChild(btnPrev); sliderContainer.appendChild(trackNameLabel); sliderContainer.appendChild(btnNext);
                 if (window.Game.DOM.customTrackSelect) window.Game.DOM.customTrackSelect.style.display = 'none';
-                const testBtn = document.getElementById('btnStartTest'); if (testBtn && testBtn.parentNode) { testBtn.parentNode.insertBefore(sliderContainer, testBtn); }
+
+                // ПРИВЯЗЫВАЕМ СЛАЙДЕР В ЛЕВУЮ ЧАСТЬ ЭКРАНА ПОД КНОПКИ
+                const leftPanel = document.getElementById('editorLeftPanel');
+                if (leftPanel) { leftPanel.appendChild(sliderContainer); }
+                
                 updateTrackLabel();
             } else {
                 const label = document.getElementById('editorMusicTrackName'); if (label) label.textContent = window.Game.MUSIC_TRACKS[window.Game.selectedTrackIndex].name;
             }
             this.updateEditorView(); 
         },
+
 // js/editor.js - Часть 2 из 4
         updateEditorView() { 
             window.Game.customObjects.forEach(obj => { 
