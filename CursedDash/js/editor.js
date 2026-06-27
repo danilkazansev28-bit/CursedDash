@@ -1,10 +1,12 @@
-// js/editor.js - Часть 1 из 2
+// js/editor.js - Часть 1 из 4
 if (!window.EditorEngine) {
     window.EditorEngine = {
         openEditor() { 
-            window.MenuEngine.initDOMRefs(); 
-            window.Game.DOM.mainMenuScreen.style.display = 'none'; 
-            window.Game.DOM.editorPanel.style.display = 'flex'; 
+            // ПРИНУДИТЕЛЬНЫЙ ВЫЗОВ ДИСКУРСА: Переключаем экран через умный метод switchScreen!
+            if (window.MenuEngine && window.MenuEngine.switchScreen) {
+                window.MenuEngine.switchScreen('editor');
+            }
+            
             window.Game.DOM.stopTestBtn.style.display = 'none'; 
             window.Game.DOM.progressBarContainer.style.display = 'none'; 
             window.Game.isEditorMode = true; 
@@ -68,38 +70,7 @@ if (!window.EditorEngine) {
 
             this.updateEditorView(); 
         },
-        updateEditorView() { 
-            window.Game.customObjects.forEach(obj => { 
-                obj.element.style.left = (obj.x - window.Game.editorScrollX) + 'px'; 
-                obj.element.style.bottom = obj.bottom + 'px'; 
-                obj.element.style.display = 'block'; 
-                window.Game.DOM.objectsLayer.appendChild(obj.element); 
-            }); 
-        },
-        setTool(tool) {
-            window.Game.currentTool = tool; 
-            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
-            const toolsMap = { 
-                'spike-floor': 'toolSpikeFloor', 'spike-ceil': 'toolSpikeCeil', 'solid-block': 'toolBlock', 
-                'portal': 'toolPortal', 'orb-purple': 'toolOrbPurple', 'orb-pink': 'toolOrbPink', 'orb-red': 'toolOrbRed', 
-                'pad-yellow': 'toolPadYellow', 'pad-pink': 'toolPadPink', 'pad-red': 'toolPadRed', 
-                'speed-slow': 'toolSlow', 'speed-normal': 'toolNorm', 'speed-fast': 'toolFast', 'eraser': 'toolEraser' 
-            };
-            if(toolsMap[tool]) document.getElementById(toolsMap[tool]).classList.add('active');
-        },
-        saveCustomLevelPrompt() { 
-            if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой уровень!"); return; } 
-            const name = prompt("Введите название уровня:", "Мой уровень " + (this.getSavedLevels().length + 1)); 
-            if (!name) return; 
-            
-            const levels = this.getSavedLevels();
-            const dataToSave = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height })); 
-            
-            levels.push({ name: name, objects: dataToSave, selectedTrackIndex: window.Game.selectedTrackIndex }); 
-            localStorage.setItem('gd_custom_levels', JSON.stringify(levels)); 
-            window.MenuEngine.renderSavedLevels(); 
-            alert("Уровень сохранен со встроенным треком!"); 
-        },
+
 // js/editor.js - Часть 2 из 2
         initEditorEvents() {
             window.MenuEngine.initDOMRefs();
