@@ -60,7 +60,7 @@ window.MenuEngine = {
             item.innerHTML = `<span>${lvl.name}</span><div class="level-item-btns"><button style="background:#00ff88; color:#111;" id="playCustom-${idx}">Играть</button><button style="background:#0f3460" id="editCustom-${idx}">Ред.</button><button style="background:#e94560" id="delCustom-${idx}">Х</button></div>`; 
             window.Game.DOM.levelsListContainer.appendChild(item); 
             document.getElementById(`playCustom-${idx}`).addEventListener('click', () => this.loadAndPlayLevel(idx)); 
-            document.getElementById(`editCustom-${idx}`).addEventListener('click', () => this.loadAndEditLevel(idx)); 
+            document.getElementById(`editCustom-${idx}`).addEventListener('click', () => { window.MenuEngine.initDOMRefs(); window.Game.DOM.mainMenuScreen.style.display = 'none'; window.Game.DOM.editorPanel.style.display = 'flex'; window.Game.isEditorMode = true; window.Game.selectedTrackIndex = lvl.selectedTrackIndex !== undefined ? lvl.selectedTrackIndex : 0; window.Game.customObjects = lvl.objects.map(o => { const el = document.createElement('div'); if (o.type === 'solid-block') el.className = 'solid-block'; else if (o.type === 'portal') el.className = 'portal'; else if (o.type.startsWith('orb-')) el.className = `orb ${o.type}`; else if (o.type.startsWith('pad-')) el.className = `pad ${o.type}`; else if (o.type.startsWith('speed-')) el.className = `speed-portal ${o.type}`; else { el.className = 'spike'; if (o.type === 'spike-ceil') el.style.transform = 'rotate(180deg)'; } return { element: el, type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height }; }); window.EditorEngine.updateEditorView(); if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; }); 
             document.getElementById(`delCustom-${idx}`).addEventListener('click', () => this.deleteLevel(idx)); 
         }); 
     },
@@ -81,14 +81,6 @@ window.MenuEngine = {
             return { element: el, type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height }; 
         }); 
         window.MenuEngine.startCustomTest(); 
-    },
-    loadAndEditLevel(idx) { 
-        const lvl = window.EditorEngine.getSavedLevels()[idx]; 
-        window.Game.selectedTrackIndex = lvl.selectedTrackIndex !== undefined ? lvl.selectedTrackIndex : 0;
-        this.loadAndPlayLevel(idx); 
-        window.Game.isTestingCustom = false; 
-        window.EditorEngine.openEditor(); 
-        if (window.Game.DOM.cube) window.Game.DOM.cube.style.display = 'none'; 
     },
 // js/main.js - Часть 3 из 4
     startGame(lvl) { 
@@ -135,20 +127,35 @@ document.addEventListener("DOMContentLoaded", () => {
         const updateBar = (name) => {
             loadedCount++; let pct = Math.floor((loadedCount / total) * 100);
             const fill = document.getElementById('loaderFill'), txt = document.getElementById('loaderText');
-            if(fill) fill.style.width = pct + '%'; if(txt) txt.textContent = `Загрузка: assets/images/${name} (${pct}%)`;
+            if(fill) fill.style.width = pct + '%'; if(txt) txt.textContent = `Загрузка: ${name} (${pct}%)`;
         };
 
+        // Загружаем текстуры картинок
         for(let img of images) {
             await new Promise(r => {
-                const i = new Image(); i.src = `/assets/images/${img}`;
-                i.onload = () => { updateBar(img); r(); }; i.onerror = () => { updateBar(img); r(); };
+                const i = new Image(); i.src = `assets/images/${img}`;
+                i.onload = () => { updateBar(img); r(); }; 
+                i.onerror = () => { updateBar(img + ' (Ошибка 404)'); r(); }; // Если картинки нет, не виснем!
             });
         }
+        
+        // КРИТИЧЕСКИЙ ФИКС: Защищаем аудиоплеер от зависания при ошибке 404!
         for(let track of tracks) {
-            if(window.AudioEngine && window.AudioEngine.loadTrackPromise) {
-                await window.AudioEngine.loadTrackPromise(track); updateBar(track);
-            }
+            await new Promise(async (r) => {
+                try {
+                    if(window.AudioEngine && window.AudioEngine.loadTrackPromise) {
+                        // Пытаемся безопасно загрузить трек
+                        await window.AudioEngine.loadTrackPromise(track);
+                    }
+                } catch(err) {
+                    console.log("Трек пропущен из-за отсутствия файла:", track);
+                }
+                updateBar(track);
+                r(); // Принудительно разблокируем очередь загрузки в любом случае!
+            });
         }
+        
+        // Загрузка гарантированно окончена, плавно включаем главное меню
         setTimeout(() => {
             const ls = document.getElementById('loadingScreen'); if(ls) ls.remove();
         }, 300);
