@@ -7,30 +7,32 @@ body {
 }
 #gameContainer {
     position: relative; width: 800px; height: 400px;
-    background: #0a0813; overflow: hidden; border: 4px solid #3d3b54;
+    background: #0a0813 !important; overflow: hidden; border: 4px solid #3d3b54;
     border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
 }
-/* НЕОНОВЫЙ ПОЛ ИГРЫ */
+/* ТОТ САМЫЙ РАБОЧИЙ НЕОНОВЫЙ ПОЛ ИГРЫ */
 #gameContainer::after {
     content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 50px;
-    background: #110f24; border-top: 3px solid #00ff88; box-shadow: 0 -5px 20px rgba(0,255,136,0.3); z-index: 20;
+    background: #110f24 !important; border-top: 3px solid #00ff88 !important; 
+    box-shadow: 0 -5px 20px rgba(0,255,136,0.4) !important; z-index: 20; display: block !important;
 }
 #mainMenuScreen, #skinSelectScreen, #gameOverScreen {
     position: absolute; width: 100%; height: 100%; top: 0; left: 0;
     display: flex; flex-direction: column; justify-content: center;
-    align-items: center; background: rgba(10, 8, 19, 0.9) !important; z-index: 100;
+    align-items: center; background: rgba(10, 8, 19, 0.95) !important; z-index: 100;
 }
-/* ПАНЕЛЬ РЕДАКТОРА С ПРОКРУТКОЙ И ВЫХОДОМ */
+/* ПОЛНЫЙ ФИКС РЕДАКТОРА: Прокрутка и свободный выход */
 #editorPanel {
     position: absolute; bottom: 0; left: 0; width: 100%; height: 90px;
-    background: #111019; border-top: 3px solid #2d2b3d; display: none;
+    background: #111019 !important; border-top: 3px solid #2d2b3d !important; display: flex !important;
     align-items: center; justify-content: flex-start; z-index: 200; padding: 6px;
-    overflow-x: auto; box-sizing: border-box; gap: 6px;
+    overflow-x: auto !important; box-sizing: border-box; gap: 6px;
 }
 .menu-title {
     font-size: 42px; color: #00ff88; font-weight: bold;
     text-shadow: 0 0 20px rgba(0,255,136,0.5); margin-bottom: 30px;
 }
+/* ВОЗВРАЩАЕМ КРАСИВЫЙ СТИЛЬ КНОПОК МЕНЮ */
 .menu-btn {
     background: linear-gradient(135deg, #00ff88, #00bfff) !important; color: #0b0914 !important;
     border: none !important; padding: 12px 35px !important; font-size: 16px !important; font-weight: bold !important;
@@ -38,26 +40,29 @@ body {
     box-shadow: 0 5px 15px rgba(0,255,136,0.3) !important; display: block !important; z-index: 110;
 }
 .menu-btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(0,255,136,0.5) !important; }
-/* ЖЕЛЕЗНЫЙ ФИКС КУБИКА: Никаких рамок, бордеров и теней! Только чистая PNG текстура из JS */
 #cube {
     position: absolute; left: 100px; bottom: 50px; width: 40px; height: 40px;
     display: flex; justify-content: center; align-items: center; font-size: 20px;
-    z-index: 50; transition: transform 0.01s linear;
+    z-index: 50; transition: transform 0.01s linear; border-radius: 4px;
 }
 #objectsLayer { position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 25; }
 /* css/style.css - Часть 2 из 2 */
-/* Все фоны объектов сделаны прозрачными, чтобы отображались только твои PNG текстуры */
 .spike {
-    position: absolute; width: 30px; height: 40px; z-index: 30; background: transparent !important;
+    position: absolute; width: 30px; height: 40px; z-index: 30;
+    border-left: 15px solid transparent !important; border-right: 15px solid transparent !important;
+    border-bottom: 40px solid #e94560 !important; filter: drop-shadow(0 0 5px #e94560);
 }
 .solid-block {
-    position: absolute; width: 40px; height: 40px; z-index: 35; background: transparent !important;
+    position: absolute; width: 40px; height: 40px; z-index: 35;
+    background: #1f4068 !important; border: 2px solid #00bfff !important; box-shadow: 0 0 8px #00bfff;
 }
 .portal {
-    position: absolute; width: 35px; height: 95px; z-index: 25; background: transparent !important;
+    position: absolute; width: 35px; height: 95px; z-index: 25;
+    background: rgba(233,69,96,0.2) !important; border: 2px dashed #e94560 !important; box-shadow: 0 0 15px #e94560;
 }
 .speed-portal {
-    position: absolute; width: 25px; height: 100px; z-index: 25; background: transparent !important;
+    position: absolute; width: 25px; height: 100px; z-index: 25;
+    background: rgba(0,255,136,0.2) !important; border: 2px dashed #00ff88 !important; box-shadow: 0 0 15px #00ff88;
 }
 .orb {
     position: absolute; width: 30px; height: 30px; border-radius: 50%; z-index: 40;
