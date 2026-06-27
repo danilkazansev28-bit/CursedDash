@@ -5,9 +5,7 @@ import './testNormal.js';
 import './testCustom.js';
 import './effects.js';
 import './physics.js';
-
-// ПРИНУДИТЕЛЬНЫЙ ОБХОД КЭША: Переподключаем редактор с обнулением модульной зависимости
-import './editor.js?v=2'; 
+import './editor.js'; // ЖЕСТКИЙ ФИКС: Убрали знак вопроса, вернули чистый рабочий импорт!
 
 window.MenuEngine = {
     initDOMRefs() {
