@@ -11,27 +11,59 @@ if (!window.EditorEngine) {
             window.Game.isMouseOverPanel = false; 
             window.PhysicsEngine.clearGameContainer(); 
             
-            if (!document.getElementById('customMp3UrlInput')) {
-                const inputEl = document.createElement('input');
-                inputEl.id = 'customMp3UrlInput';
-                inputEl.type = 'text';
-                inputEl.placeholder = 'Вставь MP3-ссылку...';
-                inputEl.style.cssText = 'background:#222; color:#fff; border:1px solid #555; padding:4px; font-size:10px; width:130px; margin:0 4px; border-radius:3px; position:relative; z-index:10000;';
+            const oldInput = document.getElementById('customMp3UrlInput'); if (oldInput) oldInput.remove();
+            const oldFileInput = document.getElementById('customMp3FileInput'); if (oldFileInput) oldFileInput.remove();
+            const oldFileLabel = document.getElementById('customMp3FileLabel'); if (oldFileLabel) oldFileLabel.remove();
+
+            if (!document.getElementById('musicSliderContainer')) {
+                const sliderContainer = document.createElement('div');
+                sliderContainer.id = 'musicSliderContainer';
+                sliderContainer.style.cssText = 'display:flex; align-items:center; background:#1a1a24; border:1px solid #444; padding:2px 6px; border-radius:4px; margin:0 4px;';
+
+                const btnPrev = document.createElement('button');
+                btnPrev.textContent = '◀';
+                btnPrev.style.cssText = 'background:#333; color:#fff; border:none; font-size:10px; padding:2px 4px; cursor:pointer; border-radius:2px;';
                 
-                // ЖЕСТКИЙ ФИКС: Запрещаем редактору перехватывать клики, когда мы пишем в инпуте!
-                inputEl.addEventListener('mousedown', (e) => { e.stopPropagation(); });
-                inputEl.addEventListener('keydown', (e) => { e.stopPropagation(); });
-                inputEl.addEventListener('keyup', (e) => { e.stopPropagation(); });
+                const trackNameLabel = document.createElement('span');
+                trackNameLabel.id = 'editorMusicTrackName';
+                trackNameLabel.style.cssText = 'color:#00ff88; font-size:10px; font-weight:bold; min-width:90px; text-align:center; display:inline-block; font-family:monospace; margin:0 4px;';
                 
+                const btnNext = document.createElement('button');
+                btnNext.textContent = '▶';
+                btnNext.style.cssText = 'background:#333; color:#fff; border:none; font-size:10px; padding:2px 4px; cursor:pointer; border-radius:2px;';
+
+                const updateTrackLabel = () => {
+                    const currentTrack = window.Game.MUSIC_TRACKS[window.Game.selectedTrackIndex];
+                    trackNameLabel.textContent = currentTrack ? currentTrack.name : "Без музыки";
+                };
+
+                btnPrev.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.Game.selectedTrackIndex = (window.Game.selectedTrackIndex - 1 + window.Game.MUSIC_TRACKS.length) % window.Game.MUSIC_TRACKS.length;
+                    updateTrackLabel();
+                });
+
+                btnNext.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.Game.selectedTrackIndex = (window.Game.selectedTrackIndex + 1) % window.Game.MUSIC_TRACKS.length;
+                    updateTrackLabel();
+                });
+
+                sliderContainer.appendChild(btnPrev);
+                sliderContainer.appendChild(trackNameLabel);
+                sliderContainer.appendChild(btnNext);
+
+                if (window.Game.DOM.customTrackSelect) window.Game.DOM.customTrackSelect.style.display = 'none';
+
                 const testBtn = document.getElementById('btnStartTest');
                 if (testBtn && testBtn.parentNode) {
-                    testBtn.parentNode.insertBefore(inputEl, testBtn);
+                    testBtn.parentNode.insertBefore(sliderContainer, testBtn);
                 }
-            }
-            
-            const inputField = document.getElementById('customMp3UrlInput');
-            if (inputField) {
-                inputField.value = window.Game.currentCustomMp3Url || '';
+                
+                updateTrackLabel();
+            } else {
+                const label = document.getElementById('editorMusicTrackName');
+                if (label) label.textContent = window.Game.MUSIC_TRACKS[window.Game.selectedTrackIndex].name;
             }
 
             this.updateEditorView(); 
@@ -56,21 +88,17 @@ if (!window.EditorEngine) {
             if(toolsMap[tool]) document.getElementById(toolsMap[tool]).classList.add('active');
         },
         saveCustomLevelPrompt() { 
-            if (window.Game.customObjects.length === 0) { alert("Нельзя保存 пустой уровень!"); return; } 
+            if (window.Game.customObjects.length === 0) { alert("Нельзя сохранить пустой уровень!"); return; } 
             const name = prompt("Введите название уровня:", "Мой уровень " + (this.getSavedLevels().length + 1)); 
             if (!name) return; 
             
-            const inputField = document.getElementById('customMp3UrlInput');
-            const mp3Url = inputField ? inputField.value.trim() : '';
-            window.Game.currentCustomMp3Url = mp3Url;
-
             const levels = this.getSavedLevels();
             const dataToSave = window.Game.customObjects.map(o => ({ type: o.type, x: o.x, bottom: o.bottom, width: o.width, height: o.height })); 
             
-            levels.push({ name: name, objects: dataToSave, track: window.Game.selectedTrack, customMp3Url: mp3Url }); 
+            levels.push({ name: name, objects: dataToSave, selectedTrackIndex: window.Game.selectedTrackIndex }); 
             localStorage.setItem('gd_custom_levels', JSON.stringify(levels)); 
             window.MenuEngine.renderSavedLevels(); 
-            alert("Уровень сохранен вместе с кастомной музыкой!"); 
+            alert("Уровень сохранен со встроенным треком!"); 
         },
 // js/editor.js - Часть 2 из 2
         initEditorEvents() {
@@ -83,11 +111,10 @@ if (!window.EditorEngine) {
             if(scrRight) scrRight.addEventListener('click', () => { window.Game.editorScrollX += 120; this.updateEditorView(); });
             
             window.Game.DOM.container.addEventListener('mousedown', (e) => {
-                // ПОЛНАЯ РАЗБЛОКИРОВКА: Если кликнули по строке ввода ссылки, мгновенно выходим и не мешаем вводу текста!
-                if (e.target && e.target.id === 'customMp3UrlInput') return;
+                if (e.target && (e.target.closest('#musicSliderContainer') || e.target.id === 'editorMusicTrackName')) return;
                 
                 e.preventDefault(); 
-                if (!window.Game.isEditorMode || window.Game.isMouseOverPanel || e.target === window.Game.DOM.stopTestBtn || e.target === window.Game.DOM.customTrackSelect || e.target.closest('#editorPanel')) return;
+                if (!window.Game.isEditorMode || window.Game.isMouseOverPanel || e.target === window.Game.DOM.stopTestBtn || (window.Game.DOM.customTrackSelect && e.target === window.Game.DOM.customTrackSelect) || e.target.closest('#editorPanel')) return;
                 
                 const rect = window.Game.DOM.container.getBoundingClientRect(); 
                 let clickX = e.clientX - rect.left, clickY = e.clientY - rect.top, globalX = clickX + window.Game.editorScrollX;
@@ -122,10 +149,13 @@ if (!window.EditorEngine) {
                 window.Game.customObjects.push({ element: newEl, type: type, x: snapX, bottom: snapY, width: parseInt(width, 10), height: parseInt(height, 10) });
             });
             
-            window.Game.DOM.customTrackSelect.addEventListener('change', (e) => { 
-                window.Game.selectedTrack = e.target.value; 
-                if (window.Game.gameActive) window.AudioEngine.startMusic(); 
-            });
+            // КРИТИЧЕСКИЙ ЗАЩИТНЫЙ ФИКС: Проверяем, существует ли старый селект, перед тем как вешать addEventListener
+            if (window.Game.DOM.customTrackSelect) {
+                window.Game.DOM.customTrackSelect.addEventListener('change', (e) => { 
+                    window.Game.selectedTrack = e.target.value; 
+                    if (window.Game.gameActive) window.AudioEngine.startMusic(); 
+                });
+            }
         },
         getSavedLevels() { const data = localStorage.getItem('gd_custom_levels'); return data ? JSON.parse(data) : []; },
         clearCustomLevel() { window.Game.customObjects.forEach(obj => obj.element.remove()); window.Game.customObjects = []; }
