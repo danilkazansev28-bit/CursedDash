@@ -1,4 +1,4 @@
-// js/physics.js - Часть 1 из 4
+// js/physics.js - Часть 1 из 5
 import './state.js';
 import './audio.js';
 import './testNormal.js';
@@ -33,6 +33,7 @@ window.PhysicsEngine = {
         } 
     },
     releaseAction() { window.Game.isHoldingAction = false; },
+// js/physics.js - Часть 2 из 5
     isPointInTriangle(px, py, ax, ay, bx, by, cx, cy) {
         let v0x = cx - ax, v0y = cy - ay, v1x = bx - ax, v1y = by - ay, v2x = px - ax, v2y = py - ay;
         let dot00 = v0x*v0x + v0y*v0y, dot01 = v0x*v1x + v0y*v1y, dot02 = v0x*v2x + v0y*v2y, dot11 = v1x*v1x + v1y*v1y, dot12 = v1x*v2x + v1y*v2y;
@@ -46,35 +47,22 @@ window.PhysicsEngine = {
         for(let p of points) { if(this.isPointInTriangle(p.x, p.y, ax, ay, bx, by, cx, cy)) return true; }
         return false;
     },
-// js/physics.js - Часть 2 из 4
+// js/physics.js - Часть 3 из 5
     update() {
-        if (!window.Game.gameActive) { 
-            if (window.EffectsEngine) window.EffectsEngine.updateParticles(); 
-            window.Game.animationFrameId = requestAnimationFrame(() => this.update()); 
-            return; 
-        }
+        if (!window.Game.gameActive) { if (window.EffectsEngine) window.EffectsEngine.updateParticles(); window.Game.animationFrameId = requestAnimationFrame(() => this.update()); return; }
         if (window.Game.spawnProtectionFrames > 0) window.Game.spawnProtectionFrames--;
         if (window.Game.padCooldown > 0) window.Game.padCooldown--;
 
         if (window.Game.currentMode === 'cube') {
             window.Game.cubeVelocityY += window.Game.GRAVITY_CUBE; window.Game.cubeY += window.Game.cubeVelocityY;
             if (window.Game.cubeY >= 0) { 
-                if (!window.Game.isGrounded && window.Game.cubeVelocityY > 2) {
-                    if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) window.EffectsEngine.createLandSmoke(100, 50); 
-                }
+                if (!window.Game.isGrounded && window.Game.cubeVelocityY > 2) { if (window.EffectsEngine && window.EffectsEngine.createLandSmoke) window.EffectsEngine.createLandSmoke(100, 50); }
                 window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; window.Game.isGrounded = true; window.Game.rotation = window.Game.targetRotation; 
             }
-            if (!window.Game.isGrounded && window.Game.rotation < window.Game.targetRotation) { 
-                window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; 
-            }
+            if (!window.Game.isGrounded && window.Game.rotation < window.Game.targetRotation) { window.Game.rotation += window.Game.rotationSpeed; if (window.Game.rotation > window.Game.targetRotation) window.Game.rotation = window.Game.targetRotation; }
         } else {
-            if (window.Game.isHoldingAction) { 
-                window.Game.cubeVelocityY += window.Game.THRUST_SHIP; 
-                if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, true);
-            } else { 
-                window.Game.cubeVelocityY += window.Game.GRAVITY_SHIP; 
-                if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, false);
-            }
+            if (window.Game.isHoldingAction) { window.Game.cubeVelocityY += window.Game.THRUST_SHIP; if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, true); } 
+            else { window.Game.cubeVelocityY += window.Game.GRAVITY_SHIP; if (window.EffectsEngine) window.EffectsEngine.createRocketTrail(100, 50 - window.Game.cubeY, false); }
             window.Game.cubeVelocityY = Math.max(-6, Math.min(6, window.Game.cubeVelocityY)); window.Game.cubeY += window.Game.cubeVelocityY;
             if (window.Game.cubeY >= 0) { window.Game.cubeY = 0; window.Game.cubeVelocityY = 0; }
             const ceilingY = -310; if (window.Game.cubeY <= ceilingY) { window.Game.cubeY = ceilingY; window.Game.cubeVelocityY = 0; }
@@ -84,20 +72,17 @@ window.PhysicsEngine = {
         const liveCube = document.getElementById('cube');
         if (liveCube) {
             liveCube.style.transform = `translateY(${window.Game.cubeY}px) rotate(${window.Game.rotation}deg)`;
-            // ФИКС КУБА: Пытаемся накатить текстуру, но оставляем белый базовый цвет, если файла нет!
+            // ПРОПОРЦИИ ИГРОКА: Задаем contain — картинка не деформируется!
             liveCube.style.backgroundImage = `url("/assets/images/${window.Game.currentMode === 'cube' ? 'cube.png' : 'ship.png'}")`;
-            liveCube.style.backgroundSize = 'cover';
+            liveCube.style.backgroundSize = 'contain'; liveCube.style.backgroundRepeat = 'no-repeat'; liveCube.style.backgroundPosition = 'center';
         }
         
         let activeBaseSpeed = window.Game.LEVEL_DATA[window.Game.currentLevel] ? window.Game.LEVEL_DATA[window.Game.currentLevel].speed : 5.5;
         let finalMovementSpeed = activeBaseSpeed * window.Game.currentSpeedMultiplier;
-
         window.Game.score += finalMovementSpeed;
         const liveScore = document.getElementById('scoreVal'); if (liveScore) liveScore.textContent = Math.floor(window.Game.score);
 
-        const liveProgText = document.getElementById('progressText');
-        const liveProgFill = document.getElementById('progressBarFill');
-
+        const liveProgText = document.getElementById('progressText'); const liveProgFill = document.getElementById('progressBarFill');
         if (window.Game.isTestingCustom) {
             if (window.CustomTestEngine && window.CustomTestEngine.handleProgress(finalMovementSpeed, liveProgText, liveProgFill)) return;
             if (window.CustomTestEngine) window.CustomTestEngine.handleSpawning();
@@ -105,16 +90,14 @@ window.PhysicsEngine = {
             if (window.NormalLevelEngine && window.NormalLevelEngine.handleProgress(finalMovementSpeed, liveProgText, liveProgFill)) return;
             if (window.NormalLevelEngine) window.NormalLevelEngine.handleSpawning();
         }
-
         if (window.EffectsEngine) window.EffectsEngine.updateBackgroundPulse();
-// js/physics.js - Часть 3 из 4
+// js/physics.js - Часть 4 из 5
         const cL = 100, cR = 140, cB = 50 - window.Game.cubeY, cT = cB + window.Game.CUBE_SIZE, p = 5;
         let standingOnBlock = false; if (window.Game.cubeY === 0) { window.Game.isGrounded = true; } else { window.Game.isGrounded = false; }
 
         for (let i = window.Game.solidBlocks.length - 1; i >= 0; i--) {
             const b = window.Game.solidBlocks[i]; b.x -= finalMovementSpeed; b.element.style.left = b.x + 'px';
-            // ФИКС БЛОКОВ: Даем CSS свободно рисовать базовую фигуру, если PNG нет в помине
-            b.element.style.backgroundImage = "url('/assets/images/block.png')"; b.element.style.backgroundSize = 'cover';
+            b.element.style.backgroundImage = "url('/assets/images/block.png')"; b.element.style.backgroundSize = 'contain'; b.element.style.backgroundRepeat = 'no-repeat';
             if (b.x < -50) { b.element.remove(); window.Game.solidBlocks.splice(i, 1); continue; }
             if (cR > b.x && cL < b.x + b.width && cT > b.bottom && cB < b.bottom + b.height) {
                 const overlapY = cB - (b.bottom + b.height);
@@ -138,41 +121,35 @@ window.PhysicsEngine = {
                 window.AudioEngine.playPortalSound(); window.Game.padCooldown = 15; 
             }
         }
+// js/physics.js - Часть 5 из 5
         for (let i = window.Game.portals.length - 1; i >= 0; i--) {
             const prt = window.Game.portals[i]; prt.x -= finalMovementSpeed; prt.element.style.left = prt.x + 'px';
-            prt.element.style.backgroundImage = "url('/assets/images/portal.png')"; prt.element.style.backgroundSize = 'cover';
+            prt.element.style.backgroundImage = "url('/assets/images/portal.png')"; prt.element.style.backgroundSize = 'contain'; prt.element.style.backgroundRepeat = 'no-repeat';
             if (prt.x < -50) { prt.element.remove(); window.Game.portals.splice(i, 1); continue; }
             if (cR > prt.x && cL < prt.x + prt.width && cB < prt.bottom + prt.height && cT > prt.bottom) {
                 window.AudioEngine.playPortalSound(); prt.element.remove(); window.Game.portals.splice(i, 1);
                 const liveCube = document.getElementById('cube');
-                if (window.Game.currentMode === 'cube') { 
-                    window.Game.currentMode = 'ship'; if (liveCube) liveCube.style.borderRadius = '50% 10px 10px 50%'; 
-                } else { 
-                    window.Game.currentMode = 'cube'; if (liveCube) liveCube.style.borderRadius = '4px'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
+                if (window.Game.currentMode === 'cube') { window.Game.currentMode = 'ship'; if (liveCube) liveCube.style.borderRadius = '50% 10px 10px 50%'; } 
+                else { window.Game.currentMode = 'cube'; if (liveCube) liveCube.style.borderRadius = '4px'; window.Game.targetRotation = Math.round(window.Game.rotation / 90) * 90; } if (window.Game.applySkin) window.Game.applySkin(); } }
         
         for (let i = window.Game.speedPortals.length - 1; i >= 0; i--) { 
             const sp = window.Game.speedPortals[i]; sp.x -= finalMovementSpeed; sp.element.style.left = sp.x + 'px'; 
-            sp.element.style.backgroundImage = "url('/assets/images/speed.png')"; sp.element.style.backgroundSize = 'cover';
+            sp.element.style.backgroundImage = "url('/assets/images/speed.png')"; sp.element.style.backgroundSize = 'contain'; sp.element.style.backgroundRepeat = 'no-repeat';
             if (sp.x < -50) { sp.element.remove(); window.Game.speedPortals.splice(i, 1); continue; } 
-            let portalWidth = 25; let portalHeight = 100; 
-            let portalBottom = parseInt(sp.element.style.bottom || sp.bottom || 50, 10); let portalTop = portalBottom + portalHeight;
+            let portalWidth = 25; let portalHeight = 100; let portalBottom = parseInt(sp.element.style.bottom || sp.bottom || 50, 10); let portalTop = portalBottom + portalHeight;
             let isCollidingX = (cR >= sp.x && cL <= sp.x + portalWidth) || (cR + finalMovementSpeed >= sp.x && cL - finalMovementSpeed <= sp.x + portalWidth);
             let isCollidingY = (cT >= portalBottom && cB <= portalTop);
             if (isCollidingX && isCollidingY) { 
-                window.AudioEngine.playPortalSound(); 
-                if (sp.type.includes('slow')) window.Game.currentSpeedMultiplier = 0.65;
-                else if (sp.type.includes('fast')) window.Game.currentSpeedMultiplier = 1.5;
-                else window.Game.currentSpeedMultiplier = 1.0;
-                sp.element.remove(); window.Game.speedPortals.splice(i, 1);
+                window.AudioEngine.playPortalSound(); if (sp.type.includes('slow')) window.Game.currentSpeedMultiplier = 0.65; else if (sp.type.includes('fast')) window.Game.currentSpeedMultiplier = 1.5; else window.Game.currentSpeedMultiplier = 1.0; sp.element.remove(); window.Game.speedPortals.splice(i, 1);
             } 
         }
-// js/physics.js - Часть 4 из 4
         let insideAnyOrb = false; for (let i = window.Game.orbs.length - 1; i >= 0; i--) { const ob = window.Game.orbs[i]; ob.x -= finalMovementSpeed; ob.element.style.left = ob.x + 'px'; if (ob.x < -50) { ob.element.remove(); window.Game.orbs.splice(i, 1); continue; } if (cR > ob.x && cL < ob.x + ob.width && cB < ob.bottom + ob.height && cT > ob.bottom) { insideAnyOrb = true; window.Game.activeOrbIndex = i; } } window.Game.isInsideOrb = insideAnyOrb; if (!window.Game.isInsideOrb) window.Game.activeOrbIndex = -1;
         
         for (let i = window.Game.spikes.length - 1; i >= 0; i--) { 
             const spike = window.Game.spikes[i]; spike.x -= finalMovementSpeed; spike.element.style.left = spike.x + 'px'; 
-            // ЖЕСТКИЙ ФИКС ШИПОВ: Убрали прозрачность бэкграунда, позволяя CSS перекрасить рамку в белый квадрат!
-            spike.element.style.backgroundImage = "url('/assets/images/spike.png')"; spike.element.style.backgroundSize = 'cover';
+            // ФИКС ОТОБРАЖЕНИЯ ШИПОВ: Заставляем браузер не растягивать картинку, а выводить её 1-к-1
+            spike.element.style.backgroundImage = "url('/assets/images/spike.png')";
+            spike.element.style.backgroundSize = 'contain'; spike.element.style.backgroundRepeat = 'no-repeat'; spike.element.style.backgroundPosition = 'bottom center';
             if (spike.x < -50) { spike.element.remove(); window.Game.spikes.splice(i, 1); continue; } 
             if (cR > spike.x && cL < spike.x + spike.width && cT > spike.bottom && cB < spike.bottom + spike.height && window.Game.spawnProtectionFrames === 0) { if (this.checkTriangleCollision(cL, cR, cB, cT, spike)) { window.MenuEngine.gameOver(); return; } } 
         }
@@ -197,10 +174,11 @@ window.PhysicsEngine = {
                 let maxTargetX = 800; window.Game.customObjects.forEach(obj => { if (obj.x > maxTargetX) maxTargetX = obj.x; }); window.Game.levelMaxLength = maxTargetX + 200;
                 window.Game.customObjects.forEach(obj => { 
                     const elClone = obj.element.cloneNode(true); elClone.style.display = 'block'; elClone.style.left = obj.x + 'px'; liveObjLayer.appendChild(elClone); 
-                    if (obj.type === 'solid-block') { elClone.style.backgroundImage = "url('/assets/images/block.png')"; elClone.style.backgroundSize = 'cover'; window.Game.solidBlocks.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); }
-                    else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') { elClone.style.backgroundImage = "url('/assets/images/spike.png')"; elClone.style.backgroundSize = 'cover'; window.Game.spikes.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); } 
-                    else if (obj.type === 'portal') { elClone.style.backgroundImage = "url('/assets/images/portal.png')"; elClone.style.backgroundSize = 'cover'; window.Game.portals.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); } 
-                    else if (obj.type.startsWith('speed-')) { elClone.style.backgroundImage = "url('/assets/images/speed.png')"; elClone.style.backgroundSize = 'cover'; window.Game.speedPortals.push({ element: elClone, x: parseInt(obj.x, 10), type: obj.type, width: 25, height: 100, bottom: parseInt(obj.bottom, 10) }); } 
+                    if (obj.type === 'solid-block') { elClone.style.backgroundImage = "url('/assets/images/block.png')"; window.Game.solidBlocks.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); }
+                    // ФИКС КАСТОМНЫХ ШИПОВ: Делаем их ширину 40px
+                    else if (obj.type === 'spike-floor' || obj.type === 'spike-ceil') { elClone.style.backgroundImage = "url('/assets/images/spike.png')"; window.Game.spikes.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 40, height: 40, bottom: parseInt(obj.bottom, 10) }); } 
+                    else if (obj.type === 'portal') { elClone.style.backgroundImage = "url('/assets/images/portal.png')"; window.Game.portals.push({ element: elClone, x: parseInt(obj.x, 10), width: obj.width, height: obj.height, bottom: parseInt(obj.bottom, 10) }); } 
+                    else if (obj.type.startsWith('speed-')) { elClone.style.backgroundImage = "url('/assets/images/speed.png')"; window.Game.speedPortals.push({ element: elClone, x: parseInt(obj.x, 10), type: obj.type, width: 25, height: 100, bottom: parseInt(obj.bottom, 10) }); } 
                     else if (obj.type.startsWith('orb-')) window.Game.orbs.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 30, height: 30, bottom: parseInt(obj.bottom, 10) }); 
                     else if (obj.type.startsWith('pad-')) window.Game.pads.push({ element: elClone, type: obj.type, x: parseInt(obj.x, 10), width: 34, height: 12, bottom: parseInt(obj.bottom, 10) }); 
                 }); 
@@ -212,13 +190,7 @@ window.PhysicsEngine = {
         if (window.Game.animationFrameId) cancelAnimationFrame(window.Game.animationFrameId);
         window.Game.animationFrameId = requestAnimationFrame(() => this.update());
     },
-    clearGameContainer() { 
-        window.Game.gameActive = false; const liveObjLayer = document.getElementById('objectsLayer'); if (liveObjLayer) liveObjLayer.innerHTML = ''; 
-        document.querySelectorAll('.particle').forEach(p => p.remove());
-        window.Game.spikes = []; window.Game.portals = []; window.Game.speedPortals = []; window.Game.orbs = []; window.Game.pads = []; window.Game.solidBlocks = []; window.Game.particles = []; 
-        const liveContainer = document.getElementById('gameContainer'); if (liveContainer) { liveContainer.style.backgroundColor = '#0a0813'; liveContainer.style.filter = 'none'; }
-    },
+    clearGameContainer() { window.Game.gameActive = false; const liveObjLayer = document.getElementById('objectsLayer'); if (liveObjLayer) liveObjLayer.innerHTML = ''; document.querySelectorAll('.particle').forEach(p => p.remove()); window.Game.spikes = []; window.Game.portals = []; window.Game.speedPortals = []; window.Game.orbs = []; window.Game.pads = []; window.Game.solidBlocks = []; window.Game.particles = []; const liveContainer = document.getElementById('gameContainer'); if (liveContainer) { liveContainer.style.backgroundColor = '#0a0813'; liveContainer.style.filter = 'none'; } },
     initRestartSystem() { const liveRestartBtn = document.getElementById('restartBtn'); if (liveRestartBtn) { liveRestartBtn.replaceWith(liveRestartBtn.cloneNode(true)); document.getElementById('restartBtn').addEventListener('click', () => { const liveOverScreen = document.getElementById('gameOverScreen'); if (liveOverScreen) liveOverScreen.style.display = 'none'; this.resetGame(); }); } }
 };
-
 document.addEventListener("DOMContentLoaded", () => { setTimeout(() => window.PhysicsEngine.initRestartSystem(), 100); });
