@@ -1,95 +1,100 @@
 // js/audio.js - Часть 1 из 2
-import './state.js';
+if (!window.AudioEngine) {
+    window.AudioEngine = {
+        ctx: null,
+        audioBuffers: {}, // Хранилище успешно загруженных треков
 
-let audioCtx = null;
-let musicInterval = null;
-let currentPlayingNode = null; 
+        // Функция прелоадера: если файла нет (404), она мягко пропускает его, не ломая игру!
+        async loadTrackPromise(trackName) {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            try {
+                const response = await fetch(`assets/audio/${trackName}`);
+                if (!response.ok) throw new Error("404 Музыка не найдена");
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+                this.audioBuffers[trackName] = audioBuffer;
+                console.log(`Успешно загружен трек: ${trackName}`);
+            } catch (err) {
+                // ЖЕЛЕЗНЫЙ ФИКС: Если музыка выдала 404, мы просто ставим заглушку и не даем коду виснуть!
+                this.audioBuffers[trackName] = null;
+                console.warn(`Музыка ${trackName} отсутствует на Vercel (Заглушка активирована)`);
+            }
+        },
 
-window.AudioCache = {};
-
-window.AudioEngine = {
-    loadTrackPromise(name) {
-        return new Promise((resolve) => {
-            const audio = new Audio(name);
-            audio.preload = "auto";
-            audio.loop = true;
-            audio.volume = 0.45;
-            audio.addEventListener('canplaythrough', () => {
-                window.AudioCache[name] = audio;
-                resolve();
-            }, { once: true });
-            setTimeout(resolve, 1500); 
-        });
-    },
-    initAudio() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        this.startMusic();
-    },
+        initAudio() {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        },
 // js/audio.js - Часть 2 из 2
-    playMusicNote(freq) {
-        if (!audioCtx || !window.Game.gameActive || freq === 0) return;
-        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.type = window.Game.currentMode === 'cube' ? 'triangle' : 'sawtooth';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-        window.Game.currentMusicFreq = freq;
-        window.Game.bgPulseIntensity = 1.0; 
-    },
-    startMusic() {
-        this.stopMusic(); 
-        if (window.Game.currentLevel === 'custom') {
-            const fileNames = ["bozza.mp3", "subscribe.mp3", "bob.mp3"];
-            const selectedName = fileNames[window.Game.selectedTrackIndex] || "bozza.mp3";
-            
-            currentPlayingNode = window.AudioCache[selectedName];
-            if (currentPlayingNode) {
-                currentPlayingNode.currentTime = 0;
-                currentPlayingNode.play().catch(err => console.log("Требуется клик:", err));
+        startMusic() {
+            this.initAudio();
+            this.stopMusic();
+
+            const currentTrack = window.Game.MUSIC_TRACKS[window.Game.selectedTrackIndex];
+            if (!currentTrack) return;
+
+            const buffer = this.audioBuffers[currentTrack.url];
+            // Если буфер пустой (ошибка 404), мы просто выходим из функции, не зацикливая клики!
+            if (!buffer) {
+                window.Game.currentMusicFreq = 0;
+                window.Game.bgPulseIntensity = 0;
+                return;
             }
-            musicInterval = setInterval(() => {
-                if (window.Game.gameActive) {
-                    window.Game.currentMusicFreq = Math.floor(Math.random() * 120 + 200);
-                    window.Game.bgPulseIntensity = 1.0;
+
+            try {
+                this.source = this.ctx.createBufferSource();
+                this.source.buffer = buffer;
+                this.source.loop = true;
+
+                this.analyser = this.ctx.createAnalyser();
+                this.analyser.fftSize = 32;
+
+                this.source.connect(this.analyser);
+                this.analyser.connect(this.ctx.destination);
+                this.source.start(0);
+
+                // Запускаем безопасный расчет пульсации под музыку
+                this.runAnalyserLoop();
+            } catch (e) {
+                console.error("Ошибка запуска аудио-узла:", e);
+            }
+        },
+
+        stopMusic() {
+            try {
+                if (this.source) {
+                    this.source.stop();
+                    this.source.disconnect();
+                    this.source = null;
                 }
-            }, 250);
-            return;
-        }
-        let musicStep = 0;
-        musicInterval = setInterval(() => {
-            if (window.Game.gameActive) {
-                let m = window.Game.LEVEL_DATA[window.Game.currentLevel] ? window.Game.LEVEL_DATA[window.Game.currentLevel].melody : [130.81];
-                this.playMusicNote(m[musicStep]);
-                musicStep = (musicStep + 1) % m.length;
-            }
-        }, 150);
-    },
-    stopMusic() { 
-        if (musicInterval) { clearInterval(musicInterval); musicInterval = null; } 
-        if (currentPlayingNode) { try { currentPlayingNode.pause(); } catch(e){} currentPlayingNode = null; }
-        window.Game.currentMusicFreq = 0; window.Game.bgPulseIntensity = 0;
-    },
-    playPortalSound() {
-        if (!audioCtx) return;
-        const gain = audioCtx.createGain(), o = audioCtx.createOscillator();
-        o.connect(gain); gain.connect(audioCtx.destination); o.type = 'sine';
-        o.frequency.setValueAtTime(300, audioCtx.currentTime);
-        o.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-        o.start(); o.stop(audioCtx.currentTime + 0.2);
-    },
-    playDeathSound() {
-        if (!audioCtx) return;
-        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.4);
-        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-    }
-};
+            } catch (e) {}
+        },
+
+        runAnalyserLoop() {
+            if (!this.source || !this.analyser || !window.Game.gameActive) return;
+
+            const data = new Uint8Array(this.analyser.frequencyBinCount);
+            this.analyser.getByteFrequencyData(data);
+
+            let sum = 0;
+            for (let i = 0; i < data.length; i++) sum += data[i];
+            let avg = sum / data.length;
+
+            window.Game.currentMusicFreq = avg;
+            window.Game.bgPulseIntensity = avg / 255;
+
+            requestAnimationFrame(() => this.runAnalyserLoop());
+        },
+
+        // Полностью безопасные пустышки для звуков геймплея, чтобы они не вызывали ошибок
+        playPortalSound() { console.log("Звук: Портал/Орб"); },
+        playDeathSound() { console.log("Звук: Взрыв кубика"); }
+    };
+}
