@@ -37,26 +37,29 @@ body {
 }
 .menu-btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(0,255,136,0.5); }
 
-/* ЖЕСТКИЙ ФИКС: Убираем width/height. Объект примет размер твоего PNG-файла! */
+/* ИДЕАЛЬНЫЙ ПИКСЕЛЬНЫЙ КУБ И КОРАБЛИК БЕЗ СКРУГЛЕНИЙ И СГЛАЖИВАНИЯ */
 #cube {
-    position: absolute; left: 100px; bottom: 50px; z-index: 50; 
-    transition: transform 0.01s linear; display: block;
-    image-rendering: pixelated !important; image-rendering: crisp-edges !important;
+    position: absolute; left: 100px; bottom: 50px; 
+    width: 40px !important; height: 40px !important; /* Строго фиксируем размер 40х40 */
+    border-radius: 0px !important; /* Убираем любое скругление намертво! */
+    display: block; z-index: 50; transition: transform 0.01s linear;
+    background-color: #ffffff !important;
+    background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important;
+    image-rendering: -moz-crisp-edges !important; image-rendering: -webkit-crisp-edges !important; image-rendering: pixelated !important; image-rendering: crisp-edges !important;
 }
 #objectsLayer { position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 25; }
 /* css/style.css - Часть 2 из 2 */
-/* Пиксельный рендеринг без изменения оригинального масштаба файлов */
+/* ФИКСИРУЕМ РАЗМЕРЫ ПРЕПЯТСТВИЙ И ОТКЛЮЧАЕМ РАЗМЫТИЕ */
 .spike, .solid-block, .portal, .speed-portal {
-    position: absolute; z-index: 30; display: block;
-    image-rendering: -moz-crisp-edges !important;
-    image-rendering: -webkit-crisp-edges !important;
-    image-rendering: pixelated !important; image-rendering: crisp-edges !important;
+    position: absolute; display: block; z-index: 30;
+    border-radius: 0px !important;
+    background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important;
+    image-rendering: -moz-crisp-edges !important; image-rendering: -webkit-crisp-edges !important; image-rendering: pixelated !important; image-rendering: crisp-edges !important;
 }
-/* Временные заглушки, если файлов еще нет на сервере */
-.spike:empty { width: 40px; height: 40px; background-color: #ffffff; }
-.solid-block:empty { width: 40px; height: 40px; background-color: #ffffff; }
-.portal:empty { width: 35px; height: 95px; background-color: #ffffff; }
-.speed-portal:empty { width: 25px; height: 100px; background-color: #ffffff; }
+.spike { width: 40px !important; height: 40px !important; background-color: #ffffff !important; }
+.solid-block { width: 40px !important; height: 40px !important; background-color: #ffffff !important; }
+.portal { width: 35px !important; height: 95px !important; background-color: #ffffff !important; }
+.speed-portal { width: 25px !important; height: 100px !important; background-color: #ffffff !important; }
 
 .orb { position: absolute; width: 30px; height: 30px; border-radius: 50%; z-index: 40; box-shadow: 0 0 12px currentColor; }
 .orb-purple { color: #d336cd; background: radial-gradient(circle, #ff66f9, #d336cd); }
